@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">注册</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {% for field in form %}
+                        <div class="mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}
+                            <div class="text-danger">
+                                {% for error in field.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                        <button type="submit" class="btn btn-primary">注册</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const roleSelect = document.getElementById('id_role');
+    const employerFields = document.querySelector('.employer-field');
+    const jobSeekerFields = document.querySelector('.job-seeker-field');
+
+    function toggleFields() {
+        const selectedRole = roleSelect.value;
+        employerFields.style.display = selectedRole === 'employer' ? 'block' : 'none';
+        jobSeekerFields.style.display = selectedRole === 'job_seeker' ? 'block' : 'none';
+    }
+
+    roleSelect.addEventListener('change', toggleFields);
+    toggleFields(); // 初始化显示状态
+});
+</script>
+{% endblock %}

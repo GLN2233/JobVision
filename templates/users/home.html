@@ -1,0 +1,152 @@
+<!-- users/templates/users/home.html -->
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    {% if user.is_authenticated %}
+        {% if user.role == 'employer' %}
+            <div class="row mb-4">
+                <div class="col">
+                    <h2>职位管理</h2>
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">待认领职位</h5>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>职位名称</th>
+                                            <th>公司名称</th>
+                                            <th>发布时间</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="unclaimed-jobs">
+                                        {% for job in unclaimed_jobs %}
+                                            <tr>
+                                                <td>{{ job.title }}</td>
+                                                <td>{{ job.company_name }}</td>
+                                                <td>{{ job.created_at|date:"Y-m-d" }}</td>
+                                                <td>
+                                                    <button class="btn btn-primary btn-sm claim-job" data-job-id="{{ job.id }}">
+                                                        认领职位
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        {% empty %}
+                                            <tr>
+                                                <td colspan="4" class="text-center">暂无待认领职位</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">已认领职位</h5>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>职位名称</th>
+                                            <th>公司名称</th>
+                                            <th>认领时间</th>
+                                            <th>状态</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="claimed-jobs">
+                                        {% for job in claimed_jobs %}
+                                            <tr>
+                                                <td>{{ job.title }}</td>
+                                                <td>{{ job.company_name }}</td>
+                                                <td>{{ job.claimed_at|date:"Y-m-d" }}</td>
+                                                <td>{{ job.get_status_display }}</td>
+                                                <td>
+                                                    <a href="{% url 'jobs:job_detail' job.id %}" class="btn btn-info btn-sm">
+                                                        查看详情
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        {% empty %}
+                                            <tr>
+                                                <td colspan="5" class="text-center">暂无已认领职位</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                您不是招聘方用户，无法访问职位认领功能。
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="text-center">
+            <h1>用户中心</h1>
+            <p>
+                <a href="{% url 'users:register' %}" class="btn btn-primary">注册</a>
+                <a href="{% url 'login' %}" class="btn btn-success">登录</a>
+            </p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if user.is_authenticated and user.is_recruiter %}
+<script>
+$(document).ready(function() {
+    $('.claim-job').click(function() {
+        var jobId = $(this).data('job-id');
+        var button = $(this);
+        
+        $.ajax({
+            url: '/jobs/claim/' + jobId + '/',
+            type: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    // 刷新页面以更新职位列表
+                    location.reload();
+                } else {
+                    alert('认领失败：' + response.message);
+                }
+            },
+            error: function() {
+                alert('认领请求失败，请稍后重试');
+            }
+        });
+    });
+    
+    // 获取CSRF Token的辅助函数
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

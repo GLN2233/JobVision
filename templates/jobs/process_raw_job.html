@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>处理爬取的职位</h2>
+    
+    <!-- 职位详情表单 -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4 class="mb-0">职位详情</h4>
+        </div>
+        <div class="card-body">
+            <form id="jobDetailsForm">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>基本信息</h5>
+                        <div class="mb-3">
+                            <label for="title" class="form-label">职位名称</label>
+                            <input type="text" class="form-control" id="title" name="title" value="{{ raw_job.title }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="company" class="form-label">公司名称</label>
+                            <input type="text" class="form-control" id="company" name="company" value="{{ raw_job.company }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="location" class="form-label">工作地点</label>
+                            <input type="text" class="form-control" id="location" name="location" value="{{ raw_job.location }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="salary_range" class="form-label">薪资范围</label>
+                            <input type="text" class="form-control" id="salary_range" name="salary_range" value="{{ raw_job.salary_range }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="source" class="form-label">数据来源</label>
+                            <input type="text" class="form-control" id="source" name="source" value="{{ raw_job.source }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>职位描述</h5>
+                        <div class="mb-3">
+                            <textarea class="form-control" id="description" name="description" rows="12" required>{{ raw_job.description }}</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <button type="submit" class="btn btn-success">保存修改</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 处理表单 -->
+    <div class="card">
+        <div class="card-header">
+            <h4 class="mb-0">处理职位</h4>
+        </div>
+        <div class="card-body">
+            <form id="processForm" onsubmit="return processJob(event)">
+                <div class="mb-3">
+                    <label for="category" class="form-label">选择职位类别</label>
+                    <select class="form-select" id="category" name="category">
+                        <option value="">请选择职位类别</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}">{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="notes" class="form-label">处理备注</label>
+                    <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="可以添加处理备注信息"></textarea>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <button type="submit" class="btn btn-primary">确认处理</button>
+                    <button type="button" class="btn btn-secondary" onclick="ignoreJob()">忽略此职位</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateJobDetails(event) {
+    event.preventDefault();
+    const formData = new FormData(document.getElementById('jobDetailsForm'));
+    const jsonData = {};
+    formData.forEach((value, key) => { jsonData[key] = value; });
+
+    fetch(window.location.href, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(jsonData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('职位信息更新成功！');
+            location.reload();
+        } else {
+            alert('更新失败：' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('更新失败：' + error);
+    });
+}
+
+document.getElementById('jobDetailsForm').addEventListener('submit', updateJobDetails);
+
+function processJob(event) {
+    event.preventDefault();
+    const formData = {
+        category: document.getElementById('category').value,
+        notes: document.getElementById('notes').value
+    };
+
+    fetch(window.location.href, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('职位处理成功！');
+            window.location.href = '/jobs/raw-jobs/';
+        } else {
+            alert('处理失败：' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('处理失败：' + error);
+    });
+}
+
+function ignoreJob() {
+    if (!confirm('确定要忽略这个职位吗？')) {
+        return;
+    }
+
+    fetch(window.location.href, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('已忽略该职位');
+            window.location.href = '/jobs/raw-jobs/';
+        } else {
+            alert('操作失败：' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('操作失败：' + error);
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

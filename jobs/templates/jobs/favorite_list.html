@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}我的收藏 - JobVision{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">我的收藏</h2>
+    
+    {% if favorites %}
+        <div class="row">
+            {% for favorite in favorites %}
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <a href="{% url 'jobs:job-detail' favorite.job.pk %}" class="text-decoration-none">
+                                    {{ favorite.job.title }}
+                                </a>
+                            </h5>
+                            <h6 class="card-subtitle mb-2 text-muted">{{ favorite.job.company }}</h6>
+                            <p class="card-text">
+                                <i class="fas fa-map-marker-alt"></i> {{ favorite.job.location }}<br>
+                                <i class="fas fa-money-bill-wave"></i> {{ favorite.job.salary_range }}<br>
+                                <i class="fas fa-briefcase"></i> {{ favorite.job.category.name }}
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">收藏于 {{ favorite.created_at|date:"Y-m-d" }}</small>
+                                <button class="btn btn-sm btn-outline-danger" 
+                                        onclick="toggleFavorite({{ favorite.job.id }}, this)">
+                                    <i class="fas fa-heart"></i> 取消收藏
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        {% if favorites.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if favorites.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ favorites.previous_page_number }}">&laquo;</a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for i in favorites.paginator.page_range %}
+                        <li class="page-item {% if favorites.number == i %}active{% endif %}">
+                            <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                        </li>
+                    {% endfor %}
+                    
+                    {% if favorites.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ favorites.next_page_number }}">&raquo;</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info">
+            您还没有收藏任何职位。<a href="{% url 'jobs:job-list' %}" class="alert-link">浏览职位</a>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function toggleFavorite(jobId, button) {
+    if (!confirm('确定要取消收藏这个职位吗？')) {
+        return;
+    }
+    
+    $.ajax({
+        url: `/jobs/${jobId}/favorite/`,
+        type: 'POST',
+        data: {
+            'csrfmiddlewaretoken': '{{ csrf_token }}'
+        },
+        success: function(response) {
+            if (response.is_favorite) {
+                $(button).html('<i class="fas fa-heart"></i> 取消收藏');
+            } else {
+                // 移除整个职位卡片
+                $(button).closest('.col-md-6').fadeOut(400, function() {
+                    $(this).remove();
+                    // 如果没有更多收藏，显示提示信息
+                    if ($('.col-md-6').length === 0) {
+                        $('.row').html(`
+                            <div class="alert alert-info">
+                                您还没有收藏任何职位。<a href="{% url 'jobs:job-list' %}" class="alert-link">浏览职位</a>
+                            </div>
+                        `);
+                    }
+                });
+            }
+        },
+        error: function(xhr, status, error) {
+            alert('操作失败，请重试');
+        }
+    });
+}
+</script>
+{% endblock %} 

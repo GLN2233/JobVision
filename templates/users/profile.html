@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3>个人中心</h3>
+                </div>
+                <div class="card-body">
+                    {% if user.role == 'employer' %}
+                        <!-- 招聘方看到的内容 -->
+                        <div class="card mb-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h4>我发布的职位</h4>
+                                <a href="{% url 'jobs:job-create' %}" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle"></i> 发布新职位
+                                </a>
+                            </div>
+                            <div class="card-body">
+                                {% if posted_jobs %}
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>职位名称</th>
+                                                    <th>发布时间</th>
+                                                    <th>状态</th>
+                                                    <th>收到申请</th>
+                                                    <th>操作</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for job in posted_jobs %}
+                                                <tr>
+                                                    <td>{{ job.title }}</td>
+                                                    <td>{{ job.post_date|date:"Y-m-d H:i" }}</td>
+                                                    <td>
+                                                        {% if job.audit_status == 'pending' %}
+                                                            <span class="badge bg-warning">待审核</span>
+                                                        {% elif job.audit_status == 'approved' %}
+                                                            <span class="badge bg-success">已通过</span>
+                                                        {% else %}
+                                                            <span class="badge bg-danger">已驳回</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <a href="{% url 'jobs:job-applications' job.id %}">
+                                                            <span class="badge bg-info">{{ job.applications.count }}份</span>
+                                                        </a>
+                                                    </td>
+                                                    <td>
+                                                        <a href="{% url 'jobs:job-detail' job.id %}" class="btn btn-sm btn-outline-primary">
+                                                            查看详情
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                {% else %}
+                                    <p class="text-center text-muted">暂未发布任何职位</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <!-- 求职者看到的内容 -->
+                        {% if favorite_jobs %}
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h4>我的收藏</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        {% for job in favorite_jobs %}
+                                            <div class="col-md-4 mb-3">
+                                                <div class="card h-100">
+                                                    <div class="card-body">
+                                                        <h5 class="card-title">{{ job.title }}</h5>
+                                                        <p class="card-text">{{ job.company }}</p>
+                                                        <p class="card-text">
+                                                            <small class="text-muted">{{ job.salary_range }}</small>
+                                                        </p>
+                                                    </div>
+                                                    <div class="card-footer">
+                                                        <a href="{% url 'jobs:job-detail' job.id %}" class="btn btn-primary btn-sm">
+                                                            查看详情
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        {% if applied_jobs %}
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4>我申请的职位</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div class="list-group">
+                                        {% for job in applied_jobs %}
+                                            <div class="list-group-item">
+                                                <div class="d-flex w-100 justify-content-between">
+                                                    <h5 class="mb-1">{{ job.title }}</h5>
+                                                    <small class="text-muted">
+                                                        {{ job.applications.first.apply_date|date:"Y-m-d" }}
+                                                    </small>
+                                                </div>
+                                                <p class="mb-1">{{ job.company }} - {{ job.location }}</p>
+                                                <small class="text-muted">状态：{{ job.applications.first.get_status_display }}</small>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

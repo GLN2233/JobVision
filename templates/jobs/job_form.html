@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="card">
+        <div class="card-header">
+            <h2>发布职位</h2>
+            <p class="text-muted mb-0">请填写以下信息发布新的职位</p>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="{{ form.title.id_for_label }}" class="form-label">职位名称</label>
+                    {{ form.title }}
+                    <div class="form-text">例如：Python开发工程师、产品经理、UI设计师等</div>
+                    {% if form.title.errors %}
+                        <div class="alert alert-danger mt-2">
+                            {{ form.title.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.company.id_for_label }}" class="form-label">公司名称</label>
+                    {{ form.company }}
+                    <div class="form-text">请输入您的公司全称</div>
+                    {% if form.company.errors %}
+                        <div class="alert alert-danger mt-2">
+                            {{ form.company.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.category.id_for_label }}" class="form-label">职位类别</label>
+                    {{ form.category }}
+                    <div class="form-text">请选择最匹配的职位类别</div>
+                    {% if form.category.errors %}
+                        <div class="alert alert-danger mt-2">
+                            {{ form.category.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.location.id_for_label }}" class="form-label">工作地点</label>
+                    {{ form.location }}
+                    <div class="form-text">例如：北京、上海、深圳、远程办公等</div>
+                    {% if form.location.errors %}
+                        <div class="alert alert-danger mt-2">
+                            {{ form.location.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.salary_range.id_for_label }}" class="form-label">薪资范围</label>
+                    {{ form.salary_range }}
+                    <div class="form-text">例如：15k-25k、25k-35k（请使用k作为单位）</div>
+                    {% if form.salary_range.errors %}
+                        <div class="alert alert-danger mt-2">
+                            {{ form.salary_range.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.description.id_for_label }}" class="form-label">职位描述</label>
+                    {{ form.description }}
+                    <div class="form-text">
+                        请详细描述：<br>
+                        1. 岗位职责<br>
+                        2. 任职要求<br>
+                        3. 工作内容<br>
+                        4. 团队情况<br>
+                        5. 其他福利待遇
+                    </div>
+                    {% if form.description.errors %}
+                        <div class="alert alert-danger mt-2">
+                            {{ form.description.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'jobs:job-list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> 返回列表
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-send"></i> 发布职位
+                    </button>
+                </div>
+            </form>
+        </div>
+        <div class="card-footer text-muted">
+            <small>
+                <i class="bi bi-info-circle"></i> 提示：发布后需要等待管理员审核通过才会显示在职位列表中
+            </small>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-text {
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+.card-header p {
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+</style>
+{% endblock %}

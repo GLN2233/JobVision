@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="card">
+        <div class="card-header">
+            <h4>我的聊天</h4>
+        </div>
+        <div class="card-body">
+            {% if chat_rooms %}
+                <div class="list-group">
+                    {% for room in chat_rooms %}
+                        {% if request.user.role == 'employer' %}
+                            <a href="{% url 'jobs:chat-room' room.job.id room.job_seeker.id %}" class="list-group-item list-group-item-action">
+                        {% else %}
+                            <a href="{% url 'jobs:chat-room' room.job.id %}" class="list-group-item list-group-item-action">
+                        {% endif %}
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1">{{ room.job.title }}</h5>
+                            </div>
+                            <p class="mb-1">
+                                {% if request.user.role == 'employer' %}
+                                    求职者: {{ room.job_seeker.username }}
+                                {% else %}
+                                    招聘方: {{ room.employer.username }}
+                                {% endif %}
+                            </p>
+                            <small class="text-muted">最后更新: {{ room.messages.last.sent_at|date:"Y-m-d H:i" }}</small>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-center text-muted">暂无聊天记录</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

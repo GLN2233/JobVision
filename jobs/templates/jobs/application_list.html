@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+
+{% block title %}申请管理 - JobVision{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">申请管理</h2>
+    
+    {% if applications %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>职位</th>
+                        {% if is_employer %}
+                            <th>申请人</th>
+                        {% else %}
+                            <th>公司</th>
+                        {% endif %}
+                        <th>申请时间</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for application in applications %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'jobs:job-detail' application.job.pk %}">
+                                    {{ application.job.title }}
+                                </a>
+                            </td>
+                            {% if is_employer %}
+                                <td>{{ application.applicant.username }}</td>
+                            {% else %}
+                                <td>{{ application.job.company }}</td>
+                            {% endif %}
+                            <td>{{ application.created_at|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                <span class="badge {% if application.status == 'pending' %}bg-warning
+                                                  {% elif application.status == 'accepted' %}bg-success
+                                                  {% elif application.status == 'rejected' %}bg-danger
+                                                  {% endif %}">
+                                    {{ application.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'jobs:application-detail' application.pk %}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    查看详情
+                                </a>
+                                {% if is_employer and application.status == 'pending' %}
+                                    <button class="btn btn-sm btn-success" 
+                                            onclick="handleStatus('{{ application.pk }}', 'accepted')">
+                                        接受
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" 
+                                            onclick="handleStatus('{{ application.pk }}', 'rejected')">
+                                        拒绝
+                                    </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if applications.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if applications.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ applications.previous_page_number }}">&laquo;</a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for i in applications.paginator.page_range %}
+                        <li class="page-item {% if applications.number == i %}active{% endif %}">
+                            <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                        </li>
+                    {% endfor %}
+                    
+                    {% if applications.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ applications.next_page_number }}">&raquo;</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info">
+            {% if is_employer %}
+                还没有收到任何申请。
+            {% else %}
+                您还没有申请任何职位。<a href="{% url 'jobs:job-list' %}" class="alert-link">浏览职位</a>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function handleStatus(applicationId, status) {
+    if (!confirm('确定要' + (status === 'accepted' ? '接受' : '拒绝') + '这个申请吗？')) {
+        return;
+    }
+    
+    $.ajax({
+        url: `/jobs/applications/${applicationId}/update/`,
+        type: 'POST',
+        data: {
+            'status': status,
+            'csrfmiddlewaretoken': '{{ csrf_token }}'
+        },
+        success: function(response) {
+            if (response.status === 'success') {
+                location.reload();
+            } else {
+                alert('操作失败：' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            alert('操作失败，请重试');
+        }
+    });
+}
+</script>
+{% endblock %} 

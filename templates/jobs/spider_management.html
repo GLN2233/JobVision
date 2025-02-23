@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <!-- 爬虫状态卡片 -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-graph-up"></i> 爬虫统计</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted">今日爬取数量：</span>
+                        <h4 class="mb-0"><span class="badge bg-primary">{{ today_count }}</span></h4>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted">待处理数量：</span>
+                        <h4 class="mb-0"><span class="badge bg-warning">{{ pending_count }}</span></h4>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">处理失败数量：</span>
+                        <h4 class="mb-0"><span class="badge bg-danger">{{ failed_count }}</span></h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 爬虫操作卡片 -->
+        <div class="col-md-8 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-gear"></i> 爬虫操作</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'jobs:start-spider' %}" class="mb-4" id="spiderForm">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-5">
+                                <label class="form-label">关键词</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                    <input type="text" name="keyword" class="form-control" placeholder="输入职位关键词" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">爬取页数</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-files"></i></span>
+                                    <input type="number" name="pages" class="form-control" value="1" min="1" max="50">
+                                </div>
+                                <div class="form-text">最大50页</div>
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100" id="startSpiderBtn">
+                                    <i class="bi bi-play-fill"></i> 开始爬取
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- 爬取进度显示 -->
+                    <div id="crawlingProgress" class="d-none">
+                        <div class="alert alert-info">
+                            <div class="d-flex align-items-center">
+                                <div class="spinner-border spinner-border-sm me-2" role="status">
+                                    <span class="visually-hidden">正在爬取...</span>
+                                </div>
+                                <span>正在爬取数据，请稍候...</span>
+                            </div>
+                            <div class="progress mt-2" style="height: 20px;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                     role="progressbar" style="width: 0%" 
+                                     aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                                    0%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 最近爬取记录 -->
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> 最近爬取记录</h5>
+                    <div>
+                        <a href="{% url 'jobs:raw-job-list' %}" class="btn btn-light btn-sm">
+                            <i class="bi bi-list"></i> 查看全部
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>职位名称</th>
+                                    <th>公司</th>
+                                    <th>来源</th>
+                                    <th>状态</th>
+                                    <th>爬取时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for job in recent_jobs %}
+                                <tr>
+                                    <td>{{ job.title }}</td>
+                                    <td>{{ job.company }}</td>
+                                    <td>
+                                        <span class="badge bg-info">{{ job.source }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if job.status == 'new' %}bg-primary{% elif job.status == 'processed' %}bg-success{% elif job.status == 'failed' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                            {{ job.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ job.created_at|date:"Y-m-d H:i" }}</td>
+                                    <td>
+                                        {% if job.status == 'new' or job.status == 'failed' %}
+                                        <a href="{% url 'jobs:process-raw-job' job.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-gear"></i> 处理
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">
+                                        <i class="bi bi-inbox h1 d-block mb-2"></i>
+                                        暂无爬取记录
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 分页控件 -->
+                {% if recent_jobs.paginator.num_pages > 1 %}
+                <div class="card-footer">
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center mb-0">
+                            {% if recent_jobs.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ recent_jobs.previous_page_number }}">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for num in recent_jobs.paginator.page_range %}
+                            <li class="page-item {% if recent_jobs.number == num %}active{% endif %}">
+                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                            {% endfor %}
+                            
+                            {% if recent_jobs.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ recent_jobs.next_page_number }}">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 添加JavaScript代码 -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const spiderForm = document.getElementById('spiderForm');
+    const startSpiderBtn = document.getElementById('startSpiderBtn');
+    const crawlingProgress = document.getElementById('crawlingProgress');
+    const progressBar = crawlingProgress.querySelector('.progress-bar');
+
+    spiderForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        startSpiderBtn.disabled = true;
+        crawlingProgress.classList.remove('d-none');
+
+        // 模拟进度更新
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += Math.random() * 15;
+            if (progress > 100) progress = 100;
+            progressBar.style.width = progress + '%';
+            progressBar.textContent = Math.round(progress) + '%';
+            progressBar.setAttribute('aria-valuenow', progress);
+
+            if (progress === 100) {
+                clearInterval(interval);
+                spiderForm.submit();
+            }
+        }, 1000);
+    });
+});
+</script>
+{% endblock %}

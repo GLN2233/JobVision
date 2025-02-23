@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+
+{% block title %}申请详情 - JobVision{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">申请详情</h5>
+                    <span class="badge {% if application.status == 'pending' %}bg-warning
+                                      {% elif application.status == 'accepted' %}bg-success
+                                      {% elif application.status == 'rejected' %}bg-danger
+                                      {% endif %}">
+                        {{ application.get_status_display }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <a href="{% url 'jobs:job-detail' application.job.pk %}" class="text-decoration-none">
+                            {{ application.job.title }}
+                        </a>
+                    </h5>
+                    <h6 class="card-subtitle mb-2 text-muted">{{ application.job.company }}</h6>
+                    
+                    <hr>
+                    
+                    <div class="mb-3">
+                        <strong>申请人：</strong> {{ application.applicant.username }}<br>
+                        <strong>申请时间：</strong> {{ application.created_at|date:"Y-m-d H:i" }}<br>
+                        <strong>简历：</strong> 
+                        {% if application.resume %}
+                            <a href="{{ application.resume.url }}" target="_blank">查看简历</a>
+                        {% else %}
+                            未上传
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>申请说明：</strong>
+                        <p class="card-text">{{ application.cover_letter|linebreaks }}</p>
+                    </div>
+                    
+                    {% if is_employer and application.status == 'pending' %}
+                        <div class="mt-3">
+                            <button class="btn btn-success" onclick="updateStatus('accepted')">接受申请</button>
+                            <button class="btn btn-danger" onclick="updateStatus('rejected')">拒绝申请</button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if chat_room %}
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">聊天记录</h5>
+                    </div>
+                    <div class="card-body" id="chat-messages" style="height: 400px; overflow-y: auto;">
+                        {% for message in chat_messages %}
+                            <div class="mb-2 {% if message.sender == request.user %}text-end{% endif %}">
+                                <small class="text-muted">{{ message.sender.username }} - {{ message.created_at|date:"m-d H:i" }}</small>
+                                <div class="p-2 rounded {% if message.sender == request.user %}bg-primary text-white{% else %}bg-light{% endif %}"
+                                     style="display: inline-block; max-width: 70%;">
+                                    {{ message.content }}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="card-footer">
+                        <form id="chat-form" class="d-flex">
+                            {% csrf_token %}
+                            <input type="text" id="message-input" class="form-control me-2" placeholder="输入消息...">
+                            <button type="submit" class="btn btn-primary">发送</button>
+                        </form>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">职位信息</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>地点：</strong> {{ application.job.location }}</p>
+                    <p><strong>薪资：</strong> {{ application.job.salary_range }}</p>
+                    <p><strong>类别：</strong> {{ application.job.category.name }}</p>
+                    <p><strong>发布时间：</strong> {{ application.job.post_date|date:"Y-m-d" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateStatus(status) {
+    if (!confirm('确定要' + (status === 'accepted' ? '接受' : '拒绝') + '这个申请吗？')) {
+        return;
+    }
+    
+    $.ajax({
+        url: '{% url "jobs:update-application" application.pk %}',
+        type: 'POST',
+        data: {
+            'status': status,
+            'csrfmiddlewaretoken': '{{ csrf_token }}'
+        },
+        success: function(response) {
+            if (response.status === 'success') {
+                location.reload();
+            } else {
+                alert('操作失败：' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            alert('操作失败，请重试');
+        }
+    });
+}
+
+{% if chat_room %}
+// 聊天相关的JavaScript代码
+$(document).ready(function() {
+    // 滚动到最新消息
+    var chatMessages = $('#chat-messages');
+    chatMessages.scrollTop(chatMessages[0].scrollHeight);
+    
+    // 发送消息
+    $('#chat-form').submit(function(e) {
+        e.preventDefault();
+        var messageInput = $('#message-input');
+        var message = messageInput.val().trim();
+        
+        if (message) {
+            $.ajax({
+                url: '{% url "jobs:send-message" chat_room.id %}',
+                type: 'POST',
+                data: {
+                    'content': message,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.status === 'success') {
+                        // 添加新消息到聊天窗口
+                        var html = `
+                            <div class="mb-2 text-end">
+                                <small class="text-muted">{{ request.user.username }} - 刚刚</small>
+                                <div class="p-2 rounded bg-primary text-white" style="display: inline-block; max-width: 70%;">
+                                    ${message}
+                                </div>
+                            </div>
+                        `;
+                        chatMessages.append(html);
+                        chatMessages.scrollTop(chatMessages[0].scrollHeight);
+                        messageInput.val('');
+                    } else {
+                        alert('发送失败：' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('发送失败，请重试');
+                }
+            });
+        }
+    });
+});
+{% endif %}
+</script>
+{% endblock %} 

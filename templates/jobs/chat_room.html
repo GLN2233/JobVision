@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="card">
+        <div class="card-header">
+            <h4>{{ job.title }} - 聊天室</h4>
+            <small class="text-muted">
+                与 {% if request.user.role == 'employer' %}{{ chat_room.job_seeker.username }}{% else %}{{ chat_room.employer.username }}{% endif %} 的对话
+            </small>
+        </div>
+        <div class="card-body">
+            <div class="chat-messages" id="chatMessages" style="height: 400px; overflow-y: auto;">
+                {% for message in messages %}
+                <div class="message {% if message.sender == request.user %}sent{% else %}received{% endif %} mb-2">
+                    <div class="message-content p-2 rounded {% if message.sender == request.user %}bg-primary text-white{% else %}bg-light{% endif %}">
+                        {{ message.content }}
+                        {% if message.attachment %}
+                            <div class="attachment mt-2">
+                                <a href="{{ message.attachment.url }}" class="btn btn-sm {% if message.sender == request.user %}btn-light{% else %}btn-primary{% endif %}" target="_blank">
+                                    <i class="bi bi-file-earmark"></i> {{ message.attachment_name|default:"附件" }}
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <small class="text-muted">
+                        {{ message.sent_at|date:"Y-m-d H:i" }}
+                    </small>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <form method="post" enctype="multipart/form-data" class="mt-3">
+                {% csrf_token %}
+                <div class="input-group">
+                    <input type="text" name="message" class="form-control" placeholder="输入消息..." required>
+                    <label class="btn btn-outline-secondary" for="attachment">
+                        <i class="bi bi-paperclip"></i>
+                    </label>
+                    <input type="file" id="attachment" name="attachment" class="d-none" onchange="updateFileName(this)">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-send"></i> 发送
+                    </button>
+                </div>
+                <small id="fileNameDisplay" class="text-muted"></small>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.chat-messages {
+    display: flex;
+    flex-direction: column;
+}
+.message {
+    max-width: 70%;
+    margin: 5px;
+}
+.message.sent {
+    align-self: flex-end;
+}
+.message.received {
+    align-self: flex-start;
+}
+.message-content {
+    padding: 10px;
+    border-radius: 15px;
+}
+.attachment {
+    border-top: 1px solid rgba(255,255,255,0.2);
+    padding-top: 8px;
+    margin-top: 8px;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatMessages = document.getElementById('chatMessages');
+    const messageForm = document.querySelector('form');
+    const messageInput = document.querySelector('input[name="message"]');
+    
+    // 用于存储已显示的消息ID
+    const displayedMessages = new Set();
+    
+    // 滚动到最新消息
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    // 创建WebSocket连接
+    const roomId = '{{ chat_room.id }}';
+    const ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
+    const chatSocket = new WebSocket(
+        ws_scheme + '://' + window.location.host + '/ws/chat/' + roomId + '/'
+    );
+
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        // 创建消息ID（使用消息内容和发送时间的组合）
+        const messageId = `${data.message}-${data.sent_at}`;
+        
+        // 检查消息是否已显示
+        if (!displayedMessages.has(messageId)) {
+            displayedMessages.add(messageId);
+            const messageHtml = `
+                <div class="message ${data.sender === '{{ request.user.username }}' ? 'sent' : 'received'} mb-2">
+                    <div class="message-content p-2 rounded ${data.sender === '{{ request.user.username }}' ? 'bg-primary text-white' : 'bg-light'}">
+                        ${data.message}
+                    </div>
+                    <small class="text-muted">
+                        ${data.sent_at}
+                    </small>
+                </div>
+            `;
+            chatMessages.insertAdjacentHTML('beforeend', messageHtml);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    };
+
+    messageForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const message = messageInput.value;
+        if (message) {
+            chatSocket.send(JSON.stringify({
+                'message': message
+            }));
+            messageInput.value = '';
+        }
+    });
+});
+
+function updateFileName(input) {
+    const fileNameDisplay = document.getElementById('fileNameDisplay');
+    if (input.files && input.files[0]) {
+        fileNameDisplay.textContent = '已选择文件: ' + input.files[0].name;
+    } else {
+        fileNameDisplay.textContent = '';
+    }
+}
+</script>
+{% endblock %} 

@@ -1,0 +1,124 @@
+<!-- templates/users/login.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card mt-5">
+                <div class="card-header">
+                    <h4 class="text-center">登录</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="username" class="form-label">用户名</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">密码</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">登录</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-center">
+                    <p class="mb-0">还没有账号？<a href="{% url 'users:register' %}">立即注册</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.login-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card {
+  background: white;
+  border-radius: 15px;
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 450px;
+}
+
+.logo {
+  width: 120px;
+  display: block;
+  margin: 0 auto 1.5rem;
+}
+
+.login-header h2 {
+  color: #2c3e50;
+  font-weight: 600;
+  text-align: center;
+}
+
+.form-group label {
+  color: #4a5568;
+  font-weight: 500;
+}
+
+#toggle-password {
+  border-color: #ced4da;
+}
+
+#toggle-password:hover {
+  background-color: #f8f9fa;
+}
+
+.btn-primary {
+  background-color: #3490dc;
+  border: none;
+  padding: 12px;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: #2779bd;
+  transform: translateY(-1px);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // 密码显示切换
+  const toggleButton = document.getElementById('toggle-password');
+  const passwordInput = document.getElementById('id_password');
+  
+  toggleButton.addEventListener('click', function() {
+    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+    passwordInput.setAttribute('type', type);
+    this.innerHTML = type === 'password' ? 
+      '<i class="bi bi-eye-slash"></i>' : 
+      '<i class="bi bi-eye"></i>';
+  });
+
+  // 表单验证
+  const form = document.getElementById('login-form');
+  form.addEventListener('submit', function(e) {
+    const username = document.getElementById('id_username').value.trim();
+    const password = document.getElementById('id_password').value.trim();
+    
+    if (!username || !password) {
+      e.preventDefault();
+      alert('请输入完整的登录信息！');
+    }
+  });
+});
+</script>
+{% endblock %}

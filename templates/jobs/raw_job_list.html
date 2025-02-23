@@ -1,0 +1,260 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>爬取数据管理</h2>
+    
+    <!-- 筛选表单 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="status" class="form-label">状态</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="">全部</option>
+                        <option value="new" {% if request.GET.status == 'new' %}selected{% endif %}>新爬取</option>
+                        <option value="processed" {% if request.GET.status == 'processed' %}selected{% endif %}>已处理</option>
+                        <option value="failed" {% if request.GET.status == 'failed' %}selected{% endif %}>处理失败</option>
+                        <option value="ignored" {% if request.GET.status == 'ignored' %}selected{% endif %}>已忽略</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="source" class="form-label">来源</label>
+                    <select name="source" id="source" class="form-select">
+                        <option value="">全部</option>
+                        <option value="51job" {% if request.GET.source == '51job' %}selected{% endif %}>51job</option>
+                        <!-- 可以添加更多来源选项 -->
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="search" class="form-label">搜索</label>
+                    <input type="text" class="form-control" id="search" name="search" value="{{ request.GET.search }}" placeholder="搜索职位名称或公司">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">筛选</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 批量操作 -->
+    <div class="mb-3">
+        <button class="btn btn-success" onclick="processSelected()">批量处理</button>
+        <button class="btn btn-secondary" onclick="ignoreSelected()">批量忽略</button>
+    </div>
+
+    <!-- 数据列表 -->
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="selectAll" onclick="toggleAll(this)"></th>
+                    <th>职位名称</th>
+                    <th>公司</th>
+                    <th>来源</th>
+                    <th>状态</th>
+                    <th>爬取时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in raw_jobs %}
+                <tr>
+                    <td><input type="checkbox" class="job-checkbox" value="{{ job.id }}"></td>
+                    <td>{{ job.title }}</td>
+                    <td>{{ job.company }}</td>
+                    <td>{{ job.source }}</td>
+                    <td>
+                        <span class="badge {% if job.status == 'new' %}bg-primary
+                                     {% elif job.status == 'processed' %}bg-success
+                                     {% elif job.status == 'failed' %}bg-danger
+                                     {% else %}bg-secondary{% endif %}">
+                            {{ job.get_status_display }}
+                        </span>
+                    </td>
+                    <td>{{ job.created_at|date:"Y-m-d H:i" }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="window.location.href='/jobs/process-raw-job/{{ job.id }}/'">处理</button>
+                        <button class="btn btn-sm btn-secondary" onclick="ignoreJob('{{ job.id }}')">忽略</button>
+                        <button class="btn btn-sm btn-info" onclick="viewDetails('{{ job.id }}')">详情</button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center">暂无数据</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 分页 -->
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if raw_jobs.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ raw_jobs.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.source %}&source={{ request.GET.source }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">&laquo;</a>
+            </li>
+            {% endif %}
+            
+            {% for num in raw_jobs.paginator.page_range %}
+            <li class="page-item {% if raw_jobs.number == num %}active{% endif %}">
+                <a class="page-link" href="?page={{ num }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.source %}&source={{ request.GET.source }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">{{ num }}</a>
+            </li>
+            {% endfor %}
+            
+            {% if raw_jobs.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ raw_jobs.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.source %}&source={{ request.GET.source }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">&raquo;</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+
+<!-- 详情模态框 -->
+<div class="modal fade" id="jobDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">职位详情</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="jobDetailsContent">
+                <!-- 详情内容将通过AJAX加载 -->
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleAll(source) {
+    document.querySelectorAll('.job-checkbox').forEach(checkbox => {
+        checkbox.checked = source.checked;
+    });
+}
+
+function getSelectedIds() {
+    return Array.from(document.querySelectorAll('.job-checkbox:checked')).map(cb => cb.value);
+}
+
+function processSelected() {
+    const ids = getSelectedIds();
+    if (ids.length === 0) {
+        alert('请选择要处理的数据');
+        return;
+    }
+    if (confirm('确定要处理选中的数据吗？')) {
+        fetch('/jobs/process-raw-jobs/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ids: ids})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.error || '处理失败');
+            }
+        });
+    }
+}
+
+function ignoreSelected() {
+    const ids = getSelectedIds();
+    if (ids.length === 0) {
+        alert('请选择要忽略的数据');
+        return;
+    }
+    if (confirm('确定要忽略选中的数据吗？')) {
+        fetch('/jobs/ignore-raw-jobs/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ids: ids})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.error || '操作失败');
+            }
+        });
+    }
+}
+
+function processJob(id) {
+    if (confirm('确定要处理这条数据吗？')) {
+        fetch(`/jobs/process-raw-job/${id}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.error || '处理失败');
+            }
+        });
+    }
+}
+
+function ignoreJob(id) {
+    if (confirm('确定要忽略这条数据吗？')) {
+        fetch(`/jobs/ignore-raw-job/${id}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.error || '操作失败');
+            }
+        });
+    }
+}
+
+function viewDetails(id) {
+    fetch(`/jobs/raw-jobs/${id}/details/`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('jobDetailsContent').innerHTML = data.html;
+            new bootstrap.Modal(document.getElementById('jobDetailsModal')).show();
+        })
+        .catch(error => {
+            alert('获取详情失败：' + error);
+        });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

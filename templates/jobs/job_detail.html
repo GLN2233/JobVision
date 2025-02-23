@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h2 class="card-title">{{ job.title }}</h2>
+            {% if user.is_authenticated %}
+                <div>
+                    {% if user.role == 'job_seeker' %}
+                        <form method="post" action="{% url 'jobs:toggle-favorite' job.id %}" class="d-inline">
+                            {% csrf_token %}
+                            {% if is_favorited %}
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="bi bi-star-fill"></i> 取消收藏
+                                </button>
+                            {% else %}
+                                <button type="submit" class="btn btn-outline-warning">
+                                    <i class="bi bi-star"></i> 收藏职位
+                                </button>
+                            {% endif %}
+                        </form>
+                        
+                        {% if not has_applied %}
+                            <form method="post" action="{% url 'jobs:apply-job' job.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-send"></i> 申请职位
+                                </button>
+                            </form>
+                        {% else %}
+                            <button class="btn btn-secondary" disabled>
+                                <i class="bi bi-check-circle"></i> 已申请
+                            </button>
+                        {% endif %}
+
+                        <a href="{% url 'jobs:chat-room' job.id %}" class="btn btn-outline-primary">
+                            <i class="bi bi-chat"></i> 联系招聘方
+                        </a>
+                    {% endif %}
+
+                    {% if user.role == 'employer' and can_claim %}
+                        <form method="post" action="{% url 'jobs:claim-job' job.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i> 认领职位
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <div class="mb-4">
+                <h5 class="text-muted">{{ job.company }}</h5>
+                <p>
+                    <i class="bi bi-geo-alt"></i> {{ job.location }}<br>
+                    <i class="bi bi-currency-yen"></i> {{ job.salary_range }}
+                </p>
+            </div>
+            
+            <div class="mb-4">
+                <h5>职位描述</h5>
+                <p class="card-text">{{ job.description|linebreaks }}</p>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted">发布于 {{ job.post_date|date:"Y-m-d H:i" }}</small>
+                {% if job.claim_status == 'unclaimed' %}
+                    <span class="badge bg-warning">待认领</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/job_detail.js' %}"></script>
+{% endblock %}
