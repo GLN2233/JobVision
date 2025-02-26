@@ -194,9 +194,9 @@ def recruiter_home(request):
     return render(request, 'users/home.html', context)
 
 @login_required
-def toggle_favorite(request, job_id):
+def toggle_favorite(request, pk):
     if request.method == 'POST':
-        job = get_object_or_404(Job, id=job_id)
+        job = get_object_or_404(Job, id=pk)
         favorite, created = Favorite.objects.get_or_create(user=request.user, job=job)
         
         if not created:
@@ -205,16 +205,16 @@ def toggle_favorite(request, job_id):
         else:
             messages.success(request, '已添加到收藏')
             
-        return redirect('jobs:job-detail', pk=job_id)
+        return redirect('jobs:job-detail', pk=pk)
 
 @login_required
-def apply_job(request, job_id):
+def apply_job(request, pk):
     if request.method == 'POST':
-        job = get_object_or_404(Job, id=job_id)
+        job = get_object_or_404(Job, id=pk)
         
         if job.applications.filter(user=request.user).exists():
             messages.warning(request, '您已经申请过这个职位了')
-            return redirect('jobs:job-detail', pk=job_id)
+            return redirect('jobs:job-detail', pk=pk)
         
         Application.objects.create(
             job=job,
@@ -223,9 +223,9 @@ def apply_job(request, job_id):
         )
         
         messages.success(request, '申请成功！请等待招聘方查看')
-        return redirect('jobs:job-detail', pk=job_id)
+        return redirect('jobs:job-detail', pk=pk)
     
-    return redirect('jobs:job-detail', pk=job_id)
+    return redirect('jobs:job-detail', pk=pk)
 
 @login_required
 def chat_room(request, job_id, user_id=None):

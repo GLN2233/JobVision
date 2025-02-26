@@ -1,186 +1,134 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // 获取市场报告数据
-    fetch('/jobs/market-report/', {
-        headers: {
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
+    // 测试数据
+    const mockData = {
+        categoryData: {
+            categories: ['技术', '销售', '运营', '设计', '市场'],
+            counts: [30, 25, 20, 15, 10]
+        },
+        salaryData: {
+            ranges: ['0-5k', '5-10k', '10-15k', '15-20k', '20k+'],
+            counts: [10, 20, 30, 25, 15]
+        },
+        locationData: {
+            cities: ['北京', '上海', '广州', '深圳', '杭州'],
+            counts: [35, 30, 25, 20, 15]
+        },
+        trendData: {
+            dates: ['1月', '2月', '3月', '4月', '5月', '6月'],
+            counts: [50, 60, 75, 85, 95, 100]
         }
-    })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
+    };
+
+    // 职位类别分布图
+    new Chart(document.getElementById('category-chart'), {
+        type: 'pie',
+        data: {
+            labels: mockData.categoryData.categories,
+            datasets: [{
+                data: mockData.categoryData.counts,
+                backgroundColor: [
+                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'right'
+                },
+                title: {
+                    display: true,
+                    text: '职位类别分布'
+                }
             }
-            return response.json();
-        })
-        .then(data => {
-            // 初始化所有图表
-            const categoryChart = echarts.init(document.getElementById('category-chart'));
-            const salaryChart = echarts.init(document.getElementById('salary-chart'));
-            const locationChart = echarts.init(document.getElementById('location-chart'));
-            const trendChart = echarts.init(document.getElementById('trend-chart'));
+        }
+    });
 
-            // 职位类别分布饼图配置
-            const categoryOption = {
+    // 薪资分布图
+    new Chart(document.getElementById('salary-chart'), {
+        type: 'bar',
+        data: {
+            labels: mockData.salaryData.ranges,
+            datasets: [{
+                label: '职位数量',
+                data: mockData.salaryData.counts,
+                backgroundColor: '#36A2EB'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
                 title: {
-                    text: '职位类别分布',
-                    left: 'center'
-                },
-                tooltip: {
-                    trigger: 'item',
-                    formatter: '{b}: {c} ({d}%)'
-                },
-                series: [{
-                    type: 'pie',
-                    radius: '70%',
-                    data: data.job_distribution.map(item => ({
-                        name: item.category__name,
-                        value: item.count
-                    })),
-                    emphasis: {
-                        itemStyle: {
-                            shadowBlur: 10,
-                            shadowOffsetX: 0,
-                            shadowColor: 'rgba(0, 0, 0, 0.5)'
-                        }
-                    },
-                    label: {
-                        show: true,
-                        formatter: '{b}: {c}'
-                    }
-                }]
-            };
+                    display: true,
+                    text: '薪资分布'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
 
-            // 薪资分布柱状图配置
-            const salaryOption = {
+    // 地区分布图
+    new Chart(document.getElementById('location-chart'), {
+        type: 'pie',
+        data: {
+            labels: mockData.locationData.cities,
+            datasets: [{
+                data: mockData.locationData.counts,
+                backgroundColor: [
+                    '#FF9F40', '#4BC0C0', '#FFCD56', '#FF6384', '#36A2EB'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'right'
+                },
                 title: {
-                    text: '薪资分布',
-                    left: 'center'
-                },
-                tooltip: {
-                    trigger: 'axis',
-                    axisPointer: {
-                        type: 'shadow'
-                    }
-                },
-                xAxis: {
-                    type: 'category',
-                    data: data.salary_distribution.map(item => item.range),
-                    axisLabel: {
-                        rotate: 45
-                    }
-                },
-                yAxis: {
-                    type: 'value',
-                    name: '职位数量'
-                },
-                series: [{
-                    data: data.salary_distribution.map(item => item.count),
-                    type: 'bar',
-                    barWidth: '60%',
-                    itemStyle: {
-                        color: '#91cc75'
-                    },
-                    label: {
-                        show: true,
-                        position: 'top'
-                    }
-                }]
-            };
+                    display: true,
+                    text: '地区分布'
+                }
+            }
+        }
+    });
 
-            // 地区分布图配置
-            const locationOption = {
+    // 职位发布趋势图
+    new Chart(document.getElementById('trend-chart'), {
+        type: 'line',
+        data: {
+            labels: mockData.trendData.dates,
+            datasets: [{
+                label: '职位数量',
+                data: mockData.trendData.counts,
+                borderColor: '#36A2EB',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
                 title: {
-                    text: '地区分布',
-                    left: 'center'
-                },
-                tooltip: {
-                    trigger: 'item',
-                    formatter: '{b}: {c}'
-                },
-                series: [{
-                    type: 'pie',
-                    radius: '70%',
-                    data: data.location_distribution.map(item => ({
-                        name: item.location,
-                        value: item.count
-                    })),
-                    emphasis: {
-                        itemStyle: {
-                            shadowBlur: 10,
-                            shadowOffsetX: 0,
-                            shadowColor: 'rgba(0, 0, 0, 0.5)'
-                        }
-                    },
-                    label: {
-                        show: true,
-                        formatter: '{b}: {c}'
-                    }
-                }]
-            };
-
-            // 职位趋势折线图配置
-            const trendOption = {
-                title: {
-                    text: '职位发布趋势',
-                    left: 'center'
-                },
-                tooltip: {
-                    trigger: 'axis',
-                    formatter: '{b}: {c}个职位'
-                },
-                xAxis: {
-                    type: 'category',
-                    data: data.job_trend.map(item => {
-                        const date = new Date(item.month);
-                        return `${date.getFullYear()}年${date.getMonth() + 1}月`;
-                    }),
-                    axisLabel: {
-                        rotate: 45
-                    }
-                },
-                yAxis: {
-                    type: 'value',
-                    name: '职位数量'
-                },
-                series: [{
-                    data: data.job_trend.map(item => item.count),
-                    type: 'line',
-                    smooth: true,
-                    symbol: 'circle',
-                    symbolSize: 8,
-                    lineStyle: {
-                        width: 3
-                    },
-                    itemStyle: {
-                        color: '#5470c6'
-                    },
-                    label: {
-                        show: true,
-                        position: 'top'
-                    },
-                    areaStyle: {
-                        opacity: 0.3
-                    }
-                }]
-            };
-
-            // 设置图表配置并渲染
-            categoryChart.setOption(categoryOption);
-            salaryChart.setOption(salaryOption);
-            locationChart.setOption(locationOption);
-            trendChart.setOption(trendOption);
-
-            // 响应式调整
-            window.addEventListener('resize', function() {
-                categoryChart.resize();
-                salaryChart.resize();
-                locationChart.resize();
-                trendChart.resize();
-            });
-        })
-        .catch(error => {
-            console.error('获取市场报告数据失败:', error);
-            // 显示错误信息给用户
-            alert('加载市场报告数据失败，请刷新页面重试。');
-        });
+                    display: true,
+                    text: '职位发布趋势'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
 });

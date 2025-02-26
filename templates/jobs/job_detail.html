@@ -35,7 +35,7 @@
                             </button>
                         {% endif %}
 
-                        <a href="{% url 'jobs:chat-room' job.id %}" class="btn btn-outline-primary">
+                        <a href="{% url 'jobs:chat-room' job.id request.user.id %}" class="btn btn-outline-primary">
                             <i class="bi bi-chat"></i> 联系招聘方
                         </a>
                     {% endif %}
