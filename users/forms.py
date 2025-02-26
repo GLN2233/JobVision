@@ -54,9 +54,14 @@ class UserRegistrationForm(UserCreationForm):
         })
 
 class UserProfileForm(forms.ModelForm):
+    company_intro = forms.CharField(
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        required=False
+    )
+
     class Meta:
         model = User
-        fields = ['email', 'company_name', 'skills']
+        fields = ['email', 'company_name', 'skills', 'company_intro']
         widgets = {
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
             'company_name': forms.TextInput(attrs={'class': 'form-control'}),
@@ -68,5 +73,6 @@ class UserProfileForm(forms.ModelForm):
         # 根据用户角色显示不同字段
         if self.instance.role == 'job_seeker':
             del self.fields['company_name']
+            del self.fields['company_intro']
         elif self.instance.role == 'employer':
             del self.fields['skills']

@@ -8,8 +8,8 @@ from jobs.models import Job, Application
 from django.contrib import messages
 from .forms import UserProfileForm
 from django.db.models import Q
-from django.contrib.auth.models import User
-from .models import Profile
+from .models import Profile, User
+from django.shortcuts import get_object_or_404
 
 def register(request):
     if request.method == 'POST':
@@ -58,7 +58,73 @@ def user_home(request):
         return render(request, 'users/home.html', context)
     return render(request, 'users/home.html')  # 或重定向到其他页面
 
+@login_required
+def update_profile(request):
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            user = form.save()
+            # 同时更新Profile模型
+            profile = user.profile
+            if user.role == 'employer':
+                profile.company_intro = form.cleaned_data.get('company_intro', '')
+                profile.company_name = form.cleaned_data.get('company_name', user.company_name)
+            elif user.role == 'job_seeker':
+                profile.skills = form.cleaned_data.get('skills', '')
+            profile.save()
+            messages.success(request, '个人资料更新成功！')
+            return redirect('users:profile')
+        else:
+            messages.error(request, '请检查表单中的错误！')
+    form = UserProfileForm(instance=request.user)
+    return render(request, 'users/update_profile.html', {'form': form})
 
+@login_required
+def update_avatar(request):
+    if request.method == 'POST' and request.FILES.get('avatar'):
+        profile = request.user.profile
+        profile.avatar = request.FILES['avatar']
+        profile.save()
+        messages.success(request, '头像更新成功！')
+        return redirect('users:profile')
+    return render(request, 'users/update_avatar.html')
+
+@login_required
+def update_resume(request):
+    if request.method == 'POST' and request.FILES.get('resume'):
+        profile = request.user.profile
+        profile.resume = request.FILES['resume']
+        profile.save()
+        messages.success(request, '简历更新成功！')
+        return redirect('users:profile')
+    return render(request, 'users/update_resume.html')
+@login_required
+def change_password(request):
+    if request.method == 'POST':
+        old_password = request.POST.get('old_password')
+        new_password = request.POST.get('new_password')
+        if old_password and new_password:
+            if request.user.check_password(old_password):
+                request.user.set_password(new_password)
+                request.user.save()
+                messages.success(request, '密码修改成功！请重新登录。')
+                return redirect('users:login')
+            else:
+                messages.error(request, '原密码不正确！')
+        else:
+            messages.error(request, '请填写所有必填字段！')
+    return render(request, 'users/change_password.html')
+@login_required
+def delete_account(request):
+    if request.method == 'POST':
+        password = request.POST['password']
+        if request.user.check_password(password):
+            request.user.delete()
+            messages.success(request, '账号已成功注销。')
+            return redirect('home:index')
+        else:
+            messages.error(request, '密码不正确！')
+    return render(request, 'users/delete_account.html')
 # users/views.py
 from django.contrib.auth.views import LoginView
 from django.urls import reverse_lazy
@@ -107,5 +173,110 @@ def logout_view(request):
     logout(request)
     messages.success(request, '您已成功退出登录！')
     return redirect('home:index')
+
+@login_required
+def update_profile(request):
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            user = form.save()
+            # 同时更新Profile模型
+            profile = user.profile
+            if user.role == 'employer':
+                profile.company_intro = form.cleaned_data.get('company_intro', '')
+                profile.company_name = form.cleaned_data.get('company_name', user.company_name)
+            elif user.role == 'job_seeker':
+                profile.skills = form.cleaned_data.get('skills', '')
+            profile.save()
+            messages.success(request, '个人资料更新成功！')
+            return redirect('users:profile')
+        else:
+            messages.error(request, '请检查表单中的错误！')
+    form = UserProfileForm(instance=request.user)
+    return render(request, 'users/update_profile.html', {'form': form})
+
+@login_required
+def update_avatar(request):
+    if request.method == 'POST' and request.FILES.get('avatar'):
+        profile = request.user.profile
+        profile.avatar = request.FILES['avatar']
+        profile.save()
+        messages.success(request, '头像更新成功！')
+        return redirect('users:profile')
+    return render(request, 'users/update_avatar.html')
+
+@login_required
+def update_resume(request):
+    if request.method == 'POST' and request.FILES.get('resume'):
+        profile = request.user.profile
+        profile.resume = request.FILES['resume']
+        profile.save()
+        messages.success(request, '简历更新成功！')
+        return redirect('users:profile')
+    return render(request, 'users/update_resume.html')
+
+@login_required
+def change_password(request):
+    if request.method == 'POST':
+        old_password = request.POST.get('old_password')
+        new_password = request.POST.get('new_password')
+        if old_password and new_password:
+            if request.user.check_password(old_password):
+                request.user.set_password(new_password)
+                request.user.save()
+                messages.success(request, '密码修改成功！请重新登录。')
+                return redirect('users:login')
+            else:
+                messages.error(request, '原密码不正确！')
+        else:
+            messages.error(request, '请填写所有必填字段！')
+    return render(request, 'users/change_password.html')
+
+@login_required
+def delete_account(request):
+    if request.method == 'POST':
+        password = request.POST['password']
+        if request.user.check_password(password):
+            request.user.delete()
+            messages.success(request, '账号已成功注销。')
+            return redirect('home:index')
+        else:
+            messages.error(request, '密码不正确！')
+    return render(request, 'users/delete_account.html')
+
+@login_required
+def user_management(request):
+    users = User.objects.all().order_by('-date_joined')
+    return render(request, 'users/user_management.html', {'users': users})
+
+@login_required
+def change_role(request, user_id):
+    if not request.user.is_staff:
+        messages.error(request, '您没有权限执行此操作！')
+        return redirect('users:user-management')
+    
+    user = get_object_or_404(User, id=user_id)
+    if request.method == 'POST':
+        new_role = request.POST.get('role')
+        if new_role in ['employer', 'job_seeker']:
+            user.role = new_role
+            user.save()
+            messages.success(request, f'用户 {user.username} 的角色已更新为 {new_role}')
+        else:
+            messages.error(request, '无效的角色类型！')
+    return redirect('users:user-management')
+
+@login_required
+def delete_user(request, user_id):
+    if not request.user.is_staff:
+        messages.error(request, '您没有权限执行此操作！')
+        return redirect('users:user-management')
+    
+    user = get_object_or_404(User, id=user_id)
+    if request.method == 'POST':
+        username = user.username
+        user.delete()
+        messages.success(request, f'用户 {username} 已被成功删除。')
+    return redirect('users:user-management')
 
 

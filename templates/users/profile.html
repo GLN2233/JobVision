@@ -5,6 +5,76 @@
 <div class="container py-4">
     <div class="row">
         <div class="col-md-12">
+            <!-- 用户信息管理卡片 -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3>个人信息</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center mb-3">
+                            <div class="position-relative">
+                                <img src="{% if user.profile.avatar %}{{ user.profile.avatar.url }}{% else %}{% static 'images/default-avatar.png' %}{% endif %}" 
+                                     class="rounded-circle img-thumbnail" style="width: 150px; height: 150px;" alt="用户头像">
+                                <button class="btn btn-sm btn-primary position-absolute bottom-0 start-50 translate-middle-x" 
+                                        data-bs-toggle="modal" data-bs-target="#avatarModal">
+                                    <i class="bi bi-camera"></i> 更换头像
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-9">
+                            <form method="post" action="{% url 'users:update-profile' %}" class="row g-3">
+                                {% csrf_token %}
+                                <div class="col-md-6">
+                                    <label for="username" class="form-label">用户名</label>
+                                    <input type="text" class="form-control" id="username" name="username" value="{{ user.username }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="email" class="form-label">邮箱</label>
+                                    <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" readonly>
+                                </div>
+                                {% if user.role == 'employer' %}
+                                <div class="col-12">
+                                    <label for="company_intro" class="form-label">公司简介</label>
+                                    <textarea class="form-control" id="company_intro" name="company_intro" rows="3">{{ user.profile.company_intro }}</textarea>
+                                </div>
+                                {% else %}
+                                <div class="col-12">
+                                    <label for="skills" class="form-label">技能描述</label>
+                                    <textarea class="form-control" id="skills" name="skills" rows="3">{{ user.profile.skills }}</textarea>
+                                </div>
+                                <div class="col-12">
+                                    <label for="resume" class="form-label">我的简历</label>
+                                    <div class="d-flex align-items-center">
+                                        {% if user.profile.resume %}
+                                            <a href="{{ user.profile.resume.url }}" class="btn btn-outline-primary me-2" target="_blank">
+                                                <i class="bi bi-file-earmark-text"></i> 查看当前简历
+                                            </a>
+                                        {% endif %}
+                                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#resumeModal">
+                                            <i class="bi bi-upload"></i> 上传新简历
+                                        </button>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-save"></i> 保存修改
+                                    </button>
+                                    <a href="/users/change-password/" class="btn btn-primary">
+                                        <i class="bi bi-key"></i> 修改密码
+                                    </a>
+                                    <button type="button" class="btn btn-danger ms-2" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+                                        <i class="bi bi-person-x"></i> 注销账号
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 原有的职位管理卡片 -->
             <div class="card">
                 <div class="card-header">
                     <h3>个人中心</h3>
@@ -124,6 +194,92 @@
                     {% endif %}
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- 头像上传模态框 -->
+<div class="modal fade" id="avatarModal" tabindex="-1" aria-labelledby="avatarModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="avatarModalLabel">更换头像</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'users:update-avatar' %}" enctype="multipart/form-data">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="avatar" class="form-label">选择新头像</label>
+                        <input type="file" class="form-control" id="avatar" name="avatar" accept="image/*" required>
+                        <div class="form-text">支持jpg、png格式，建议尺寸200x200像素</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">上传</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- 简历上传模态框 -->
+<div class="modal fade" id="resumeModal" tabindex="-1" aria-labelledby="resumeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resumeModalLabel">上传简历</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'users:update-resume' %}" enctype="multipart/form-data">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="resume" class="form-label">选择简历文件</label>
+                        <input type="file" class="form-control" id="resume" name="resume" accept=".pdf,.doc,.docx" required>
+                        <div class="form-text">支持PDF、Word格式文件</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">上传</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 账号注销模态框 -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-labelledby="deleteAccountModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteAccountModalLabel">注销账号</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'users:delete-account' %}">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <p class="text-danger">警告：账号注销后将无法恢复，所有相关数据将被永久删除。</p>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">请输入密码确认</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="confirm_delete" name="confirm_delete" required>
+                        <label class="form-check-label" for="confirm_delete">
+                            我确认要注销我的账号
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-danger">确认注销</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

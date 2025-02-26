@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'jobs.apps.JobsConfig',
     'channels',
+    'community.apps.CommunityConfig'
 ]
 
 MIDDLEWARE = [
