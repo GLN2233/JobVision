@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                    <h2 class="card-title">{{ post.title }}</h2>
+                    <p class="text-muted mb-2">
+                        <span class="badge bg-primary">{{ post.get_category_display }}</span>
+                        {{ post.author.username }} · {{ post.created_at|date:"Y-m-d H:i" }}
+                    </p>
+                </div>
+                {% if user == post.author %}
+                <div class="btn-group">
+                    <a href="{% url 'community:post-edit' post.pk %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-pencil"></i> 编辑
+                    </a>
+                    <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                        <i class="bi bi-trash"></i> 删除
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="post-content mb-4">
+                {{ post.content|linebreaks }}
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="text-muted">
+                    <i class="bi bi-eye"></i> {{ post.views }} 次浏览
+                </div>
+                <button class="btn btn-outline-primary btn-sm like-button" data-post-id="{{ post.pk }}" data-liked="{% if user in post.likes.all %}true{% else %}false{% endif %}">
+                    <i class="bi {% if user in post.likes.all %}bi-heart-fill{% else %}bi-heart{% endif %}"></i>
+                    <span class="like-count">{{ post.like_count }}</span> 赞
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">评论 ({{ post.comments.count }})</h5>
+        </div>
+        <div class="card-body">
+            {% if user.is_authenticated %}
+            <form method="post" class="mb-4">
+                {% csrf_token %}
+                <div class="mb-3">
+                    {{ form.content }}
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-send"></i> 发表评论
+                </button>
+            </form>
+            {% else %}
+            <div class="alert alert-info">
+                请 <a href="{% url 'users:login' %}">登录</a> 后发表评论
+            </div>
+            {% endif %}
+
+            <div class="comments-list">
+                {% for comment in comments %}
+                <div class="comment-item mb-3">
+                    <div class="d-flex">
+                        <div class="flex-shrink-0">
+                            {% if comment.author.profile.avatar %}
+                            <img src="{{ comment.author.profile.avatar.url }}" class="rounded-circle" width="40" height="40" alt="{{ comment.author.username }}的头像">
+                            {% else %}
+                            <img src="/static/images/default-avatar.png" class="rounded-circle" width="40" height="40" alt="{{ comment.author.username }}的头像">
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ comment.author.username }}</h6>
+                                    <small class="text-muted">{{ comment.created_at|date:"Y-m-d H:i" }}</small>
+                                </div>
+                            </div>
+                            <p class="mb-0">{{ comment.content|linebreaks }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-center text-muted">暂无评论</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认对话框 -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">确认删除</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>确定要删除这个帖子吗？此操作不可恢复。</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <form action="{% url 'community:post-delete' post.pk %}" method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">确认删除</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const likeButton = document.querySelector('.like-button');
+    if (likeButton) {
+        likeButton.addEventListener('click', function() {
+            if (!document.querySelector('body').classList.contains('user-authenticated')) {
+                // 创建提示框
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-warning alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
+                alertDiv.setAttribute('role', 'alert');
+                alertDiv.innerHTML = `
+                    请先<a href="{% url 'users:login' %}" class="alert-link">登录</a>后再点赞
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.body.appendChild(alertDiv);
+                
+                // 3秒后自动关闭提示框
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 3000);
+                return;
+            }
+
+            const postId = this.dataset.postId;
+            const icon = this.querySelector('i');
+            const countSpan = this.querySelector('.like-count');
+
+            fetch(`/community/post/${postId}/like/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.liked) {
+                    icon.classList.remove('bi-heart');
+                    icon.classList.add('bi-heart-fill');
+                } else {
+                    icon.classList.remove('bi-heart-fill');
+                    icon.classList.add('bi-heart');
+                }
+                countSpan.textContent = data.like_count;
+            });
+        });
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

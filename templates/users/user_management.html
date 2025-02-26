@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>用户管理</h2>
+    </div>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>用户名</th>
+                            <th>邮箱</th>
+                            <th>角色</th>
+                            <th>注册时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user_profile in users %}
+                        <tr>
+                            <td>{{ user_profile.username }}</td>
+                            <td>{{ user_profile.email }}</td>
+                            <td>
+                                <span class="badge {% if user_profile.role == 'employer' %}bg-primary{% else %}bg-success{% endif %}">
+                                    {{ user_profile.get_role_display }}
+                                </span>
+                            </td>
+                            <td>{{ user_profile.date_joined|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+                                        修改角色
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <form method="post" action="{% url 'users:change-role' user_profile.id %}">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="role" value="employer">
+                                                <button type="submit" class="dropdown-item">雇主</button>
+                                            </form>
+                                        </li>
+                                        <li>
+                                            <form method="post" action="{% url 'users:change-role' user_profile.id %}">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="role" value="job_seeker">
+                                                <button type="submit" class="dropdown-item">求职者</button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ user_profile.id }}">
+                                    删除
+                                </button>
+
+                                <!-- 删除确认对话框 -->
+                                <div class="modal fade" id="deleteModal{{ user_profile.id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">确认删除</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                确定要删除用户 "{{ user_profile.username }}" 吗？此操作不可恢复。
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                                                <form method="post" action="{% url 'users:delete-user' user_profile.id %}" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-danger">确认删除</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center">暂无用户数据</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% if is_paginated %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">上一页</a>
+            </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+            <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+            </li>
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}">下一页</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

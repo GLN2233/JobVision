@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>社区</h2>
+        {% if user.is_authenticated %}
+        <a href="{% url 'community:post-create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> 发布帖子
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="btn-group">
+                <a href="?category=all" class="btn btn-outline-primary {% if not current_category %}active{% endif %}">全部</a>
+                <a href="?category=job_seeking" class="btn btn-outline-primary {% if current_category == 'job_seeking' %}active{% endif %}">求职帖</a>
+                <a href="?category=experience" class="btn btn-outline-primary {% if current_category == 'experience' %}active{% endif %}">经验分享</a>
+                <a href="?category=discussion" class="btn btn-outline-primary {% if current_category == 'discussion' %}active{% endif %}">讨论交流</a>
+                <a href="?category=other" class="btn btn-outline-primary {% if current_category == 'other' %}active{% endif %}">其他</a>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="btn-group float-end">
+                <a href="?sort=-created_at" class="btn btn-outline-secondary {% if current_sort == '-created_at' %}active{% endif %}">最新</a>
+                <a href="?sort=popular" class="btn btn-outline-secondary {% if current_sort == 'popular' %}active{% endif %}">最热</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for post in posts %}
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h5 class="card-title mb-1">
+                                <a href="{% url 'community:post-detail' post.pk %}" class="text-decoration-none text-dark">
+                                    {{ post.title }}
+                                </a>
+                            </h5>
+                            <p class="text-muted small mb-2">
+                                <span class="badge bg-primary">{{ post.get_category_display }}</span>
+                                {{ post.author.username }} · {{ post.created_at|date:"Y-m-d H:i" }}
+                            </p>
+                        </div>
+                        <div class="text-muted small">
+                            <i class="bi bi-eye"></i> {{ post.views }}
+                            <i class="bi bi-heart ms-2"></i> {{ post.like_count }}
+                            <i class="bi bi-chat ms-2"></i> {{ post.comments.count }}
+                        </div>
+                    </div>
+                    <p class="card-text text-muted">{{ post.content|truncatewords:50 }}</p>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <p class="text-center text-muted">暂无帖子</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if is_paginated %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">上一页</a>
+            </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+            <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+            </li>
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}">下一页</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
