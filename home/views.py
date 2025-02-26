@@ -1,11 +1,15 @@
 # home/views.py
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from jobs.models import Job
+from jobs.models import Job, JobCategory
 
 def index(request):
     if request.user.is_authenticated:
         context = {}
+        # 获取所有职位类别
+        categories = JobCategory.objects.filter(parent__isnull=True)
+        context['categories'] = categories
+        
         if request.user.role == 'employer':
             # 获取招聘方发布的职位
             jobs = Job.objects.filter(employer=request.user).order_by('-post_date')[:5]

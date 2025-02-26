@@ -27,15 +27,54 @@ class JobListView(ListView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        # 如果是招聘方，显示已审核的职位、自己发布的职位和可认领的职位
+        
+        # 基础筛选：根据用户角色
         if self.request.user.is_authenticated and self.request.user.role == 'employer':
-            return queryset.filter(
+            queryset = queryset.filter(
                 Q(audit_status='approved') |
                 Q(employer=self.request.user) |
                 Q(claim_status='unclaimed', company=self.request.user.company_name)
             )
-        # 其他用户只能看到已审核的职位
-        return queryset.filter(audit_status='approved')
+        else:
+            queryset = queryset.filter(audit_status='approved')
+        
+        # 搜索条件筛选
+        q = self.request.GET.get('q')
+        category = self.request.GET.get('category')
+        location = self.request.GET.get('location')
+        salary_range = self.request.GET.get('salary_range')
+        
+        # 关键词搜索
+        if q:
+            queryset = queryset.filter(
+                Q(title__icontains=q) |
+                Q(description__icontains=q) |
+                Q(company__icontains=q)
+            )
+        
+        # 类别筛选
+        if category:
+            queryset = queryset.filter(category_id=category)
+        
+        # 地区筛选
+        if location:
+            queryset = queryset.filter(location=location)
+        
+        # 薪资范围筛选
+        if salary_range:
+            try:
+                # 直接使用salary_range字段进行筛选
+                queryset = queryset.filter(salary_range=salary_range)
+            except (ValueError, AttributeError):
+                pass
+        
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['categories'] = JobCategory.objects.all()
+        context['locations'] = Job.objects.values_list('location', flat=True).distinct()
+        return context
 
 class JobDetailView(DetailView):
     model = Job

@@ -3,66 +3,133 @@
 
 {% block content %}
 <div class="container py-4">
-    <div class="row">
-        <!-- 左侧统计信息 -->
-        <div class="col-md-4">
-            <div class="card mb-4">
-                <div class="card-body text-center">
-                    <img src="{% static 'images/default-avatar.jpg' %}" class="rounded-circle mb-3" width="100">
-                    <h4>{{ user.username }}</h4>
-                    <p class="text-muted">{{ user.get_role_display }}</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- 右侧内容区域 -->
-        <div class="col-md-8">
-            {% if user.role == 'employer' %}
-            <!-- 招聘方看到的内容 -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">我发布的职位</h5>
-                </div>
-                <div class="card-body">
-                    {% if jobs %}
-                    <div class="list-group">
-                        {% for job in jobs %}
-                        <div class="list-group-item">
-                            <h5 class="mb-1">{{ job.title }}</h5>
-                            <p class="mb-1">状态：{{ job.get_audit_status_display }}</p>
-                            <small>发布于：{{ job.post_date|date:"Y-m-d" }}</small>
-                        </div>
-                        {% endfor %}
+    <!-- 搜索和筛选区域 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" action="{% url 'jobs:job-list' %}" class="row g-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" name="q" placeholder="搜索职位关键词">
                     </div>
-                    {% else %}
-                    <p class="text-center text-muted">暂无发布的职位</p>
-                    {% endif %}
                 </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="category">
+                        <option value="">所有类别</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}">{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="location">
+                        <option value="">所有地区</option>
+                        <option value="北京">北京</option>
+                        <option value="上海">上海</option>
+                        <option value="广州">广州</option>
+                        <option value="深圳">深圳</option>
+                        <option value="杭州">杭州</option>
+                        <option value="南京">南京</option>
+                        <option value="成都">成都</option>
+                        <option value="武汉">武汉</option>
+                        <option value="西安">西安</option>
+                        <option value="重庆">重庆</option>
+                        <option value="苏州">苏州</option>
+                        <option value="天津">天津</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="salary_range">
+                        <option value="">薪资范围</option>
+                        <option value="0-5000">5k以下</option>
+                        <option value="5000-10000">5k-10k</option>
+                        <option value="10000-15000">10k-15k</option>
+                        <option value="15000-20000">15k-20k</option>
+                        <option value="20000-30000">20k-30k</option>
+                        <option value="30000-999999">30k以上</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-primary w-100">搜索</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 职位列表区域 -->
+    <div class="row">
+        {% if user.role == 'employer' %}
+        <!-- 招聘方看到的内容 -->
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4>我发布的职位</h4>
+                <a href="{% url 'jobs:job-create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> 发布新职位
+                </a>
+            </div>
+            {% if jobs %}
+            <div class="row">
+                {% for job in jobs %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ job.title }}</h5>
+                            <p class="card-text text-muted">
+                                <i class="bi bi-building"></i> {{ job.company }}<br>
+                                <i class="bi bi-geo-alt"></i> {{ job.location }}
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge bg-{{ job.audit_status }}">{{ job.get_audit_status_display }}</span>
+                                <small class="text-muted">{{ job.post_date|date:"Y-m-d" }}</small>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <a href="{% url 'jobs:job-detail' job.id %}" class="btn btn-outline-primary btn-sm">查看详情</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
             {% else %}
-            <!-- 求职者看到的内容 -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">最新职位推荐</h5>
-                </div>
-                <div class="card-body">
-                    {% if recommended_jobs %}
-                    <div class="list-group">
-                        {% for job in recommended_jobs %}
-                        <div class="list-group-item">
-                            <h5 class="mb-1">{{ job.title }}</h5>
-                            <p class="mb-1">{{ job.company }} - {{ job.location }}</p>
-                            <small>薪资：{{ job.salary_range }}</small>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <p class="text-center text-muted">暂无推荐职位</p>
-                    {% endif %}
-                </div>
+            <div class="text-center text-muted">
+                <p>暂无发布的职位</p>
             </div>
             {% endif %}
         </div>
+        {% else %}
+        <!-- 求职者看到的内容 -->
+        <div class="col-12">
+            <h4 class="mb-4">最新职位推荐</h4>
+            {% if recommended_jobs %}
+            <div class="row">
+                {% for job in recommended_jobs %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ job.title }}</h5>
+                            <p class="card-text text-muted">
+                                <i class="bi bi-building"></i> {{ job.company }}<br>
+                                <i class="bi bi-geo-alt"></i> {{ job.location }}<br>
+                                <i class="bi bi-currency-yen"></i> {{ job.salary_range }}
+                            </p>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <a href="{% url 'jobs:job-detail' job.id %}" class="btn btn-outline-primary btn-sm">查看详情</a>
+                            <button class="btn btn-outline-danger btn-sm float-end" onclick="toggleFavorite({{ job.id }})">
+                                <i class="bi bi-heart{% if job.is_favorited %}-fill{% endif %}"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center text-muted">
+                <p>暂无推荐职位</p>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

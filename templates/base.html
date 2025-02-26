@@ -71,12 +71,7 @@
                     {% if user.is_authenticated %}
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                                {% if user.profile.avatar %}
-                                    <img src="{{ user.profile.avatar.url }}" class="rounded-circle" style="width: 24px; height: 24px;" alt="{{ user.username }}的头像">
-                                {% else %}
-                                    <img src="/static/images/default-avatar.png" class="rounded-circle" style="width: 24px; height: 24px;" alt="{{ user.username }}的头像">
-                                {% endif %}
-                                {{ user.username }}
+                                <i class="bi bi-person-circle"></i> {{ user.username }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li>
