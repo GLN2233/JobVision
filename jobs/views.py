@@ -54,7 +54,11 @@ class JobListView(ListView):
         
         # 类别筛选
         if category:
-            queryset = queryset.filter(category_id=category)
+            try:
+                category_obj = JobCategory.objects.get(name=category)
+                queryset = queryset.filter(category=category_obj)
+            except JobCategory.DoesNotExist:
+                pass
         
         # 地区筛选
         if location:
