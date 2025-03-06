@@ -61,6 +61,15 @@
             </div>
             
             <div class="mb-4">
+                <h5>原始职位链接</h5>
+                {% if job.original_url %}
+                <p><a href="{{ job.original_url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-link-45deg"></i> 查看原始职位
+                </a></p>
+                {% endif %}
+            </div>
+
+            <div class="mb-4">
                 <h5>职位描述</h5>
                 <p class="card-text">{{ job.description|linebreaks }}</p>
             </div>

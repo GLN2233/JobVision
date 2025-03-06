@@ -54,6 +54,7 @@
                             <th>薪资</th>
                             <th>来源</th>
                             <th>状态</th>
+                            <th>原始链接</th>
                             <th>操作</th>
                         </tr>
                     </thead>
@@ -75,6 +76,13 @@
                                                       {% endif %}">
                                         {{ job.get_status_display }}
                                     </span>
+                                </td>
+                                <td>
+                                    {% if job.original_url %}
+                                        <a href="{{ job.original_url }}" target="_blank" class="btn btn-sm btn-outline-secondary">访问</a>
+                                    {% else %}
+                                        <span class="text-muted">无链接</span>
+                                    {% endif %}
                                 </td>
                                 <td>
                                     <button class="btn btn-sm btn-outline-primary" 

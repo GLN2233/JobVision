@@ -711,6 +711,7 @@ def raw_job_details(request, job_id):
                     <tr><th>工作地点</th><td>{raw_job.location}</td></tr>
                     <tr><th>薪资范围</th><td>{raw_job.salary_range}</td></tr>
                     <tr><th>数据来源</th><td>{raw_job.source}</td></tr>
+                    <tr><th>原始链接</th><td><a href="{raw_job.original_url}" target="_blank">{raw_job.original_url}</a></td></tr>
                     <tr><th>爬取时间</th><td>{raw_job.created_at}</td></tr>
                     <tr><th>处理状态</th><td>{raw_job.get_status_display()}</td></tr>
                 </table>

@@ -33,6 +33,13 @@
                             <label for="source" class="form-label">数据来源</label>
                             <input type="text" class="form-control" id="source" name="source" value="{{ raw_job.source }}" readonly>
                         </div>
+                        <div class="mb-3">
+                            <label for="original_url" class="form-label">原始链接</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="original_url" name="original_url" value="{{ raw_job.original_url }}" readonly>
+                                <a href="{{ raw_job.original_url }}" target="_blank" class="btn btn-outline-primary">访问</a>
+                            </div>
+                        </div>
                     </div>
                     <div class="col-md-6">
                         <h5>职位描述</h5>
