@@ -3,8 +3,8 @@ import json
 import time
 from pypinyin import lazy_pinyin, Style
 import re
-from jobs.models import RawJob
-from django.utils import timezone
+from jobs.models import RawJob  # 注释掉Django模型导入
+from django.utils import timezone  # 注释掉Django时区工具
 
 class Job51Spider:
     def __init__(self):
@@ -96,7 +96,7 @@ class Job51Spider:
                         }
                         jobs_data.append(job_data)
                         
-                        # 保存到数据库
+                        
                         RawJob.objects.create(
                             title=job_data['jobTitle'],
                             company=job_data['companyName'],
@@ -111,16 +111,16 @@ class Job51Spider:
                         )
                         
                         # 打印职位信息
-                        print('\n' + '='*50)
-                        print(f'职位名称：{job_data["jobTitle"]}')
-                        print(f'公司名称：{job_data["companyName"]}')
-                        print(f'工作地点：{job_data["jobArea"]}')
-                        print(f'薪资范围：{job_data["jobSalary"]}')
-                        print(f'经验要求：{job_data["jobYear"]}')
-                        print(f'学历要求：{job_data["jobDegree"]}')
-                        print(f'职位标签：{", ".join(job_data["tags"])}')
-                        print(f'详情链接：{job_data["jobUrl"]}')
-                        print('='*50)
+                        # print('\n' + '='*50)
+                        # print(f'职位名称：{job_data["jobTitle"]}')
+                        # print(f'公司名称：{job_data["companyName"]}')
+                        # print(f'工作地点：{job_data["jobArea"]}')
+                        # print(f'薪资范围：{job_data["jobSalary"]}')
+                        # print(f'经验要求：{job_data["jobYear"]}')
+                        # print(f'学历要求：{job_data["jobDegree"]}')
+                        # print(f'职位标签：{", ".join(job_data["tags"])}')
+                        # print(f'详情链接：{job_data["jobUrl"]}')
+                        # print('='*50)
                         
                 except Exception as e:
                     print(f'提取数据时出错: {str(e)}')

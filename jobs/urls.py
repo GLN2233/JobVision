@@ -1,9 +1,10 @@
 from django.urls import path
 from . import views
-
+from jobs.views import MarketReportView
 app_name = 'jobs'
 
 urlpatterns = [
+    path('market-report/', MarketReportView.as_view(), name='market-report'),
     path('chat-list/', views.chat_list, name='chat-list'),
     path('', views.JobListView.as_view(), name='job-list'),
     path('<int:pk>/', views.JobDetailView.as_view(), name='job-detail'),
@@ -26,7 +27,6 @@ urlpatterns = [
     path('ignore-raw-jobs/', views.ignore_raw_jobs, name='ignore-raw-jobs'),
     path('audit/', views.JobAuditListView.as_view(), name='audit-list'),
     path('audit/<int:pk>/', views.audit_job, name='audit-job'),
-    path('market-report/', views.market_report, name='market-report'),
     path('unclaimed-jobs/', views.unclaimed_job_list, name='unclaimed-jobs'),
     path('claim/<int:job_id>/', views.claim_job, name='claim-job'),
     path('start-spider/', views.start_spider, name='start-spider'),

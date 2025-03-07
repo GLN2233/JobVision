@@ -19,8 +19,18 @@ class JobForm(forms.ModelForm):
         # 验证薪资范围格式
         if not salary_range:
             raise forms.ValidationError('请输入薪资范围')
-        if 'k' not in salary_range.lower():
-            raise forms.ValidationError('请使用"k"作为薪资单位，例如：15k-25k')
+        
+        salary_range = salary_range.lower()
+        # 支持k和万两种单位
+        if 'k' not in salary_range and '万' not in salary_range:
+            raise forms.ValidationError('请使用"k"或"万"作为薪资单位，例如：15k-25k或1.5万-2万')
+            
+        # 统一转换为k为单位
+        if '万' in salary_range:
+            numbers = [float(n) * 10 for n in re.findall(r'\d+(?:\.\d+)?', salary_range)]
+            if len(numbers) >= 2:
+                salary_range = f'{numbers[0]}k-{numbers[1]}k'
+        
         return salary_range
 
     def clean_description(self):

@@ -11,11 +11,12 @@ from django.contrib.auth.decorators import user_passes_test, login_required
 from django.http import JsonResponse
 from .spiders.job51 import Job51Spider
 from django.views.decorators.http import require_POST
-from django.db.models import Q, Count, F, IntegerField, Value, Case, When
-from django.db.models.functions import Cast, TruncMonth
+from django.db.models import Q, Count, F, IntegerField, Value, Case, When, CharField
+from django.db.models.functions import Cast, TruncMonth, Substr
 from django.utils import timezone
 from datetime import timedelta
 import json
+from django.views.generic import TemplateView
 import re
 
 class JobListView(ListView):
@@ -32,8 +33,7 @@ class JobListView(ListView):
         if self.request.user.is_authenticated and self.request.user.role == 'employer':
             queryset = queryset.filter(
                 Q(audit_status='approved') |
-                Q(employer=self.request.user) |
-                Q(claim_status='unclaimed', company=self.request.user.company_name)
+                Q(employer=self.request.user)
             )
         else:
             queryset = queryset.filter(audit_status='approved')
@@ -586,6 +586,10 @@ def process_raw_job(request, job_id):
             else:
                 category, _ = JobCategory.objects.get_or_create(name='其他')
             
+            # 更新原始职位的类别信息
+            raw_job.category = category
+            raw_job.save()
+            
             # 创建新职位，使用当前登录用户作为发布者
             Job.objects.create(
                 title=raw_job.title,
@@ -764,103 +768,32 @@ def start_spider(request):
         messages.error(request, f'爬虫运行出错：{str(e)}')
         return redirect('jobs:spider-management')
 
-@login_required
-def market_report(request):
-    """市场报告视图函数"""
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        # 获取职位分布数据
-        job_distribution = Job.objects.filter(audit_status='approved')\
-            .values('category__name')\
-            .annotate(count=Count('id'))\
-            .order_by('-count')
-        
-        print("职位分布数据:", list(job_distribution))  # 添加调试信息
-        
-        # 获取薪资分布数据
-        salary_ranges = ['0-10k', '10k-20k', '20k-30k', '30k-40k', '40k+']
-        salary_counts = [0] * len(salary_ranges)
-        
-        jobs = Job.objects.filter(audit_status='approved')
-        print("已审核职位数量:", jobs.count())  # 添加调试信息
-        
-        for job in jobs:
-            if job.salary_range:
-                numbers = [int(n) for n in re.findall(r'\d+', job.salary_range)]
-                if len(numbers) >= 2:
-                    avg_salary = (numbers[0] + numbers[1]) / 2
-                    if avg_salary <= 10:
-                        salary_counts[0] += 1
-                    elif avg_salary <= 20:
-                        salary_counts[1] += 1
-                    elif avg_salary <= 30:
-                        salary_counts[2] += 1
-                    elif avg_salary <= 40:
-                        salary_counts[3] += 1
-                    else:
-                        salary_counts[4] += 1
-        
-        print("薪资分布数据:", salary_counts)  # 添加调试信息
-        
-        # 获取地区分布数据
-        location_distribution = Job.objects.filter(audit_status='approved')\
-            .values('location')\
-            .annotate(count=Count('id'))\
-            .order_by('-count')[:10]
-        
-        print("地区分布数据:", list(location_distribution))  # 添加调试信息
-        
-        # 获取职位趋势数据（最近6个月）
-        end_date = timezone.now()
-        start_date = end_date - timedelta(days=180)
-        
-        job_trend = Job.objects.filter(
-            audit_status='approved',
-            post_date__range=(start_date, end_date)
-        ).annotate(
-            month=TruncMonth('post_date')
-        ).values('month')\
-        .annotate(count=Count('id'))\
-        .order_by('month')
-        
-        print("职位趋势数据:", list(job_trend))  # 添加调试信息
-        
-        # 准备趋势数据
-        trend_dates = []
-        trend_counts = []
-        current_date = start_date
-        while current_date <= end_date:
-            month_key = current_date.strftime('%Y-%m')
-            trend_dates.append(month_key)
-            count = next(
-                (item['count'] for item in job_trend if item['month'].strftime('%Y-%m') == month_key),
-                0
-            )
-            trend_counts.append(count)
-            current_date += timedelta(days=30)
-        
-        # 准备JSON响应数据
-        data = {
-            'categoryData': {
-                'categories': [item['category__name'] for item in job_distribution],
-                'counts': [item['count'] for item in job_distribution]
-            },
-            'salaryData': {
-                'ranges': salary_ranges,
-                'counts': salary_counts
-            },
-            'locationData': {
-                'locations': [item['location'] for item in location_distribution],
-                'counts': [item['count'] for item in location_distribution]
-            },
-            'trendData': {
-                'dates': trend_dates,
-                'counts': trend_counts
-            }
+class MarketReportView(TemplateView):
+    template_name = 'jobs/market_report.html'
+
+    def get(self, request, *args, **kwargs):
+        # 获取职位类别分布数据
+        categories = Job.objects.values('category__name').annotate(count=Count('id')).order_by('-count')
+        chart_data = {
+            'labels': [item['category__name'] for item in categories],
+            'data': [item['count'] for item in categories],
+            'backgroundColor': ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b']
         }
-        
-        return JsonResponse(data)
     
-    return render(request, 'jobs/market_report.html')
+        # 获取地区分布数据
+        regions = Job.objects.values('location').annotate(count=Count('id')).order_by('-count')[:10]
+        region_data = {
+            'labels': [item['location'] for item in regions],
+            'data': [item['count'] for item in regions],
+            'backgroundColor': 'rgba(54, 162, 235, 0.5)'
+        }
+    
+        return render(request, self.template_name, {
+            'chart_data': chart_data,
+            'region_data': region_data
+        })
+
+
 
 class JobUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Job

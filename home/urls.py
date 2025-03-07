@@ -2,8 +2,10 @@
 from django.urls import path
 from . import views
 
-app_name = 'home'  # 添加应用命名空间
+
+app_name = 'home'
 
 urlpatterns = [
-    path('', views.index, name='index'),  # 首页路由
+    path('', views.index, name='index'),
+    
 ]
