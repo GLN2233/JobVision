@@ -772,6 +772,9 @@ class MarketReportView(TemplateView):
     template_name = 'jobs/market_report.html'
 
     def get(self, request, *args, **kwargs):
+        import jieba
+        from collections import Counter
+        
         # 获取职位类别分布数据
         categories = Job.objects.values('category__name').annotate(count=Count('id')).order_by('-count')
         chart_data = {
@@ -780,17 +783,35 @@ class MarketReportView(TemplateView):
             'backgroundColor': ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b']
         }
     
-        # 获取地区分布数据
-        regions = Job.objects.values('location').annotate(count=Count('id')).order_by('-count')[:10]
+        # 获取地区分布数据，使用Substr函数截取前两个字符作为地区名
+        regions = Job.objects.values(region=Substr('location', 1, 2)).annotate(count=Count('id')).order_by('-count')[:10]
         region_data = {
-            'labels': [item['location'] for item in regions],
+            'labels': [item['region'] for item in regions],
             'data': [item['count'] for item in regions],
             'backgroundColor': 'rgba(54, 162, 235, 0.5)'
         }
+        
+        # 获取职位描述文本并进行分词
+        # 获取职位描述文本并提取标签信息
+        descriptions = Job.objects.values_list('description', flat=True)
+        all_tags = []
+        for desc in descriptions:
+            if desc and '职位标签：' in desc:
+                tags_part = desc.split('职位标签：')[1].strip()
+                tags = [tag.strip() for tag in tags_part.split(',')]
+                all_tags.extend(tags)
+        
+        # 统计标签词频
+        word_counts = Counter(all_tags)
+        
+        # 获取前50个高频标签
+        top_words = word_counts.most_common(50)
+        word_cloud_data = [{'name': word, 'value': count} for word, count in top_words]
     
         return render(request, self.template_name, {
             'chart_data': chart_data,
-            'region_data': region_data
+            'region_data': region_data,
+            'word_cloud_data': word_cloud_data
         })
 
 
