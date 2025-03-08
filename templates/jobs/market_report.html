@@ -9,64 +9,72 @@
     {{ education_data|json_script:"educationData" }}
     {{ experience_data|json_script:"experienceData" }}
     <h2 class="mb-4">职位市场分析报告</h2>
-    <!-- 调试信息 -->
-    <div class="alert alert-info mt-4">
-        <h5>调试信息：</h5>
-        <p>分类数据记录数：{{ chart_data.labels|length }}</p>
-        <p>地区数据记录数：{{ region_data.labels|length }}</p>
-    </div>
     
-    <div class="card shadow mb-4">
-        <div class="card-header bg-primary text-white">
-            <h4 class="mb-0">职位类别分布</h4>
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">职位类别分布</h4>
+                </div>
+                <div class="card-body">
+                    <canvas id="categoryChart" height="250"></canvas>
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-            <canvas id="categoryChart" width="400" height="200"></canvas>
-        </div>
-    </div>
 
-    <div class="card shadow mb-4">
-        <div class="card-header bg-info text-white">
-            <h4 class="mb-0">地区分布</h4>
+        <div class="col-md-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">地区分布</h4>
+                </div>
+                <div class="card-body">
+                    <canvas id="regionChart" height="250"></canvas>
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-            <canvas id="regionChart" width="400" height="200"></canvas>
-        </div>
-    </div>
 
-    <div class="card shadow mb-4">
-        <div class="card-header bg-warning text-white">
-            <h4 class="mb-0">薪资分布</h4>
+        <div class="col-md-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header bg-warning text-white">
+                    <h4 class="mb-0">薪资分布</h4>
+                </div>
+                <div class="card-body">
+                    <canvas id="salaryChart" height="250"></canvas>
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-            <canvas id="salaryChart" width="400" height="200"></canvas>
-        </div>
-    </div>
 
-    <div class="card shadow mb-4">
-        <div class="card-header bg-success text-white">
-            <h4 class="mb-0">学历要求分布</h4>
+        <div class="col-md-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">学历要求分布</h4>
+                </div>
+                <div class="card-body">
+                    <canvas id="educationChart" height="250"></canvas>
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-            <canvas id="educationChart" width="400" height="200"></canvas>
-        </div>
-    </div>
 
-    <div class="card shadow mb-4">
-        <div class="card-header bg-danger text-white">
-            <h4 class="mb-0">经验要求分布</h4>
+        <div class="col-md-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">经验要求分布</h4>
+                </div>
+                <div class="card-body">
+                    <canvas id="experienceChart" height="250"></canvas>
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-            <canvas id="experienceChart" width="400" height="200"></canvas>
-        </div>
-    </div>
 
-    <div class="card shadow mb-4">
-        <div class="card-header bg-success text-white">
-            <h4 class="mb-0">职位热词</h4>
-        </div>
-        <div class="card-body">
-            <div id="wordCloudChart" style="width: 100%; height: 400px;"></div>
+        <div class="col-md-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">职位热词</h4>
+                </div>
+                <div class="card-body">
+                    <div id="wordCloudChart" style="height: 400px;"></div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -308,18 +316,18 @@ document.addEventListener('DOMContentLoaded', function() {
             shape: 'circle',
             left: 'center',
             top: 'center',
-            width: '70%',
-            height: '80%',
+            width: '100%',
+            height: '100%',
             right: null,
             bottom: null,
             sizeRange: [12, 60],
             rotationRange: [-90, 90],
             rotationStep: 45,
-            gridSize: 8,
+            gridSize: 4,
             drawOutOfBound: false,
             textStyle: {
-                fontFamily: 'sans-serif',
-                fontWeight: 'bold',
+                fontFamily: '"Microsoft YaHei", sans-serif',
+                fontWeight: 'normal',
                 color: function () {
                     return 'rgb(' + [
                         Math.round(Math.random() * 160),
