@@ -11,7 +11,7 @@
     <div class="card mb-4">
         <div class="card-body p-4">
             <form method="get" action="{% url 'jobs:job-list' %}" class="row g-3 justify-content-center">
-                <div class="col-md-5">
+                <div class="col-md-4">
                     <div class="input-group input-group-lg">
                         <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
                         <input type="text" class="form-control border-start-0" name="q" placeholder="搜索职位关键词">
@@ -21,11 +21,11 @@
                     <select class="form-select form-select-lg" name="category">
                         <option value="">所有类别</option>
                         {% for category in categories %}
-                        <option value="{{ category.id }}">{{ category.name }}</option>
+                        <option value="{{ category.name }}">{{ category.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-3">
                     <select class="form-select form-select-lg" name="location">
                         <option value="">所有地区</option>
                         <option value="北京">北京</option>
@@ -43,7 +43,7 @@
                     </select>
                 </div>
 
-                <div class="col-md-1">
+                <div class="col-md-2">
                     <button type="submit" class="btn btn-primary btn-lg h-100 w-100">搜索</button>
                 </div>
             </form>
