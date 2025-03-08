@@ -808,10 +808,20 @@ class MarketReportView(TemplateView):
         top_words = word_counts.most_common(50)
         word_cloud_data = [{'name': word, 'value': count} for word, count in top_words]
     
+        # 获取薪资分布数据
+        from .utils import get_salary_distribution, get_education_distribution, get_experience_requirement_distribution
+        jobs = Job.objects.all()
+        salary_data = get_salary_distribution(jobs)
+        education_data = get_education_distribution(jobs)
+        experience_data = get_experience_requirement_distribution(jobs)
+
         return render(request, self.template_name, {
             'chart_data': chart_data,
             'region_data': region_data,
-            'word_cloud_data': word_cloud_data
+            'word_cloud_data': word_cloud_data,
+            'salary_data': salary_data,
+            'education_data': education_data,
+            'experience_data': experience_data
         })
 
 
