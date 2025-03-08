@@ -13,7 +13,7 @@
                         {% if request.user.role == 'employer' %}
                             <a href="{% url 'jobs:chat-room' room.job.id room.job_seeker.id %}" class="list-group-item list-group-item-action">
                         {% else %}
-                            <a href="{% url 'jobs:chat-room' room.job.id %}" class="list-group-item list-group-item-action">
+                            <a href="{% url 'jobs:chat-room' room.job.id request.user.id %}" class="list-group-item list-group-item-action">
                         {% endif %}
                             <div class="d-flex w-100 justify-content-between">
                                 <h5 class="mb-1">{{ room.job.title }}</h5>
@@ -35,4 +35,4 @@
         </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}

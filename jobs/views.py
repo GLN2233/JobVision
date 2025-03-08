@@ -42,7 +42,6 @@ class JobListView(ListView):
         q = self.request.GET.get('q')
         category = self.request.GET.get('category')
         location = self.request.GET.get('location')
-        salary_range = self.request.GET.get('salary_range')
         
         # 关键词搜索
         if q:
@@ -63,14 +62,6 @@ class JobListView(ListView):
         # 地区筛选
         if location:
             queryset = queryset.filter(location=location)
-        
-        # 薪资范围筛选
-        if salary_range:
-            try:
-                # 直接使用salary_range字段进行筛选
-                queryset = queryset.filter(salary_range=salary_range)
-            except (ValueError, AttributeError):
-                pass
         
         return queryset
 
