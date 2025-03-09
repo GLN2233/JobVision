@@ -38,7 +38,7 @@
                                     <label for="company_intro" class="form-label">公司简介</label>
                                     <textarea class="form-control" id="company_intro" name="company_intro" rows="3">{{ user.profile.company_intro }}</textarea>
                                 </div>
-                                {% else %}
+                                {% elif not user.is_staff %}
                                 <div class="col-12">
                                     <label for="skills" class="form-label">技能描述</label>
                                     <textarea class="form-control" id="skills" name="skills" rows="3">{{ user.profile.skills }}</textarea>
@@ -75,6 +75,7 @@
             </div>
 
             <!-- 原有的职位管理卡片 -->
+            {% if not user.is_staff %}
             <div class="card">
                 <div class="card-header">
                     <h3>个人中心</h3>
@@ -194,6 +195,7 @@
                     {% endif %}
                 </div>
             </div>
+            {% endif %}
         </div>
     </div>
 </div>

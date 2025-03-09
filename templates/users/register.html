@@ -38,13 +38,22 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const roleSelect = document.getElementById('id_role');
-    const employerFields = document.querySelector('.employer-field');
-    const jobSeekerFields = document.querySelector('.job-seeker-field');
+    const companyNameField = document.getElementById('id_company_name').closest('.mb-3');
+    const skillsField = document.getElementById('id_skills').closest('.mb-3');
 
     function toggleFields() {
         const selectedRole = roleSelect.value;
-        employerFields.style.display = selectedRole === 'employer' ? 'block' : 'none';
-        jobSeekerFields.style.display = selectedRole === 'job_seeker' ? 'block' : 'none';
+        companyNameField.style.display = selectedRole === 'employer' ? 'block' : 'none';
+        skillsField.style.display = selectedRole === 'job_seeker' ? 'block' : 'none';
+        
+        // 根据角色设置字段是否必填
+        if (selectedRole === 'employer') {
+            document.getElementById('id_company_name').required = true;
+            document.getElementById('id_skills').required = false;
+        } else {
+            document.getElementById('id_company_name').required = false;
+            document.getElementById('id_skills').required = true;
+        }
     }
 
     roleSelect.addEventListener('change', toggleFields);

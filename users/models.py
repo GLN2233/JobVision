@@ -6,7 +6,6 @@ class User(AbstractUser):
     ROLE_CHOICES = [
         ('job_seeker', '求职者'),
         ('employer', '招聘方'),
-        ('admin', '管理员'),
     ]
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
     company_name = models.CharField(max_length=100, blank=True, null=True)
@@ -32,7 +31,6 @@ class Profile(models.Model):
     ROLE_CHOICES = [
         ('job_seeker', '求职者'),
         ('employer', '招聘方'),
-        ('admin', '管理员'),
     ]
     
     user = models.OneToOneField(User, on_delete=models.CASCADE)

@@ -16,12 +16,11 @@ class Job(models.Model):
         ('rejected', '已驳回'),
     ]
 
-    # 暂时注释掉这个字段定义
-    # CLAIM_STATUS_CHOICES = [
-    #     ('unclaimed', '未认领'),
-    #     ('claimed', '已认领'),
-    #     ('auto_claimed', '自动认领')
-    # ]
+    CLAIM_STATUS_CHOICES = [
+        ('unclaimed', '未认领'),
+        ('claimed', '已认领'),
+        ('auto_claimed', '自动认领')
+    ]
 
     title = models.CharField(max_length=100)  # 职位名称
     company = models.CharField(max_length=100)  # 公司名称
@@ -31,8 +30,7 @@ class Job(models.Model):
     post_date = models.DateTimeField(default=timezone.now)  # 发布时间
     employer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posted_jobs')  # 发布者
     audit_status = models.CharField(max_length=20, choices=AUDIT_STATUS_CHOICES, default='pending')  # 审核状态
-    # 暂时注释掉这个字段
-    # claim_status = models.CharField(max_length=20, choices=CLAIM_STATUS_CHOICES, default='unclaimed')  # 认领状态
+    claim_status = models.CharField(max_length=20, choices=CLAIM_STATUS_CHOICES, default='unclaimed')  # 认领状态
     original_url = models.URLField(max_length=255)  # 原始URL
     category = models.ForeignKey(JobCategory, on_delete=models.CASCADE)  # 职位类别
     raw_data = models.JSONField(null=True, blank=True)  # 职位标签信息
