@@ -167,3 +167,10 @@ CHANNEL_LAYERS = {
 # 在文件末尾添加
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# CSRF配置
+CSRF_USE_SESSIONS = False
+CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000', 'http://localhost:8000']
+CSRF_COOKIE_SECURE = False  # 开发环境设置为False，生产环境应设置为True
+CSRF_COOKIE_HTTPONLY = False  # 允许JavaScript访问CSRF cookie
+CSRF_COOKIE_SAMESITE = 'Lax'  # 允许同站点请求

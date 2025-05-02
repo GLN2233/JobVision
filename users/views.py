@@ -10,6 +10,7 @@ from .forms import UserProfileForm
 from django.db.models import Q
 from .models import Profile, User
 from django.shortcuts import get_object_or_404
+from django.views.decorators.csrf import csrf_exempt
 
 def register(request):
     if request.method == 'POST':
@@ -169,10 +170,11 @@ def login_view(request):
     
     return render(request, 'users/login.html')
 
+@login_required
 def logout_view(request):
     logout(request)
-    messages.success(request, '您已成功退出登录！')
-    return redirect('home:index')
+    messages.success(request, '退出登录成功！')
+    return redirect('users:login')
 
 @login_required
 def update_profile(request):
